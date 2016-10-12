@@ -2,7 +2,7 @@ import requests
 import json
 import bs4
 import re
-from reallySecurePasswordModule import username, password 
+from ReallySecurePasswordModule import username, password 
 
 #Fn looks through the HTML to find a token with required name
 #Tokens are different every time a page is visitied. 
