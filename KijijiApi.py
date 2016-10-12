@@ -3,6 +3,7 @@ import json
 import bs4
 import re
 from ReallySecurePasswordModule import username, password 
+import argparse
 
 #Fn looks through the HTML to find a token with required name
 #Tokens are different every time a page is visitied. 
@@ -20,7 +21,7 @@ class KijijiApi:
     #logout: None -> None
     #postAd: None -> adId
     #deleteAd: adId -> None
-    #getAllAds: None -> list(adId)
+    #getAllAds: None -> list(vector(adname, adId))
 
     def __init__(self):
         config = {}
@@ -109,18 +110,49 @@ class KijijiApi:
         myAdsPage = self.session.get(myAdsUrl)
         myAdsTree = json.loads(myAdsPage.text) 
         adIds = [entry['id'] for entry in myAdsTree['myAdEntries']]
-        return adIds
+        adNames = [entry['title'] for entry in myAdsTree['myAdEntries']]
+        return zip(adNames, adIds)
 
-#username='' either define your own passwords or create a reallySecurePasswordModule and place them in there
-#password=''
-#TODO: Take username and password as command arguments
+def main():
+   ##Start here 
+   #Takes: config(user/pass)
+   #One of:
+   #post adPostingFile
+   #show
+   #delete adId
+   #showPresentAds adId
+   #repost adPostingFile
+   parser = argparse.ArgumentParser(
+           description="Post ads on Kijiji")
 
-api = KijijiApi()
-print(api.isLoggedIn())
-api.login(username, password)
-print(api.isLoggedIn())
-adId = api.postAd('myAd.inf')
-print(adId)
-#[api.deleteAd(ad) for ad in api.getAllAds()]
-api.logout()
-print(api.isLoggedIn())
+def post_ad(ad_id):
+    print("Hi!")
+
+def show_ads():
+    print("Hi!")
+
+def delete(ad_id):
+    print("Hi")
+
+def showPresentAds(ad_id):
+    print("Hi!")
+
+#Try to delete ad with same name if possible
+#post new ad
+def repost(ad_all):
+    
+    print("Hi!")
+
+def main2():
+    api = KijijiApi()
+    print(api.isLoggedIn())
+    api.login(username, password)
+    print(api.isLoggedIn())
+    adId = api.postAd('myAd.inf')
+    print(adId)
+    #[api.deleteAd(ad) for ad in api.getAllAds()]
+    api.logout()
+    print(api.isLoggedIn())
+
+if __name__ == "__main__":
+    main()
