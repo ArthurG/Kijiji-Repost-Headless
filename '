@@ -127,50 +127,34 @@ def main():
    #repost adPostingFile
    parser = argparse.ArgumentParser(
            description="Post ads on Kijiji")
-   parser.add_argument('email', metavar='e', type=str,
-           help='the email of your kijiji account')
-   parser.add_argument('password', metavar='p', type=str,
-           help='the password of your kijiji account')
    subparsers = parser.add_subparsers(help ='sub-command help')
    
    postParser = subparsers.add_parser('post', help='post a new ad')
    postParser.add_argument('inf file', type=str, help='.inf file containing posting details')
-   postParser.set_defaults(func=post_ad)
    
-   showParser = subparsers.add_parser('show', help='show currently listed ads')
-   showParser.set_defaults(func=post_ad)
+   showParser = subparser.add_parser('show', help='show currently listed ads')
 
-   deleteParser = subparsers.add_parser('delete', help='delete a listed ad')
+   deleteParser = subparser.add_parser('delete', help='delete a listed ad')
    deleteParser.add_argument('id',type=str, help='id of the ad you wish to delete')
-   deleteParser.set_defaults(func=show_ads)
 
-   repostParser = subparsers.add_parser('repost', help='repost an existing ad')
-   repostParser.add_argument('inf file', type=str, help='.inf file containing posting details')
-   repostParser.set_defaults(func=repost_ad)
-   
-   #repostParser = subparsers.add_parser('repost', help='repost an existing ad')
-   #repostParser = repostParser.add_argument('inf_file',  help = '.inf file containing posting details')
-   #repostParser.set_defaults(func=repost_ad)
+   repostParser = subparser.add_parser('repost', type=str help='repost an existing ad')
+   repostParser = subparser.add_argument('inf_file', type = str, help = '.inf file containing posting details')
 
-   args = parser.parse_args()
-   args.func(args)
-
-def post_ad(args):
-    print(args)
+def post_ad(ad_id):
     print("Hi!")
 
-def show_ads(args):
+def show_ads():
     print("Hi!")
 
-def delete(args):
+def delete(ad_id):
     print("Hi")
 
-def repost_ad(args):
+def showPresentAds(ad_id):
     print("Hi!")
 
 #Try to delete ad with same name if possible
 #post new ad
-def repostAd(ad_all):
+def repost(ad_all):
     
     print("Hi!")
 
@@ -186,7 +170,7 @@ def main2():
     print(api.isLoggedIn())
 
 if __name__ == "__main__":
-    #api = KijijiApi()
-    #pi.login(username, password)
-    #api.postAd('myAd.inf')
+    api = KijijiApi()
+    api.login(username, password)
+    api.postAd('myAd.inf')
     main()

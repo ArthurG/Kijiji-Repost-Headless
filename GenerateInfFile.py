@@ -80,7 +80,7 @@ if pmtType == 'FIXED':
 f.write("postAdForm.attributeMap[forsaleby_s]=ownr"+"\n")
 f.write("postAdForm.title="+title+"\n")
 f.write("postAdForm.description="+description+"\n")
-f.write("postAdForm.locationId=1700209"+"\n") #TODO: Get this info from user
+f.write("postAdForm.locationId=1700212"+"\n") #TODO: Get this info from user
 f.write("locationLevel0=1700209"+"\n")
 f.write("postAdForm.postalCode="+addressMap['postal_code']+"\n")
 f.write("featuresForm.topAdDuration=7"+"\n")
