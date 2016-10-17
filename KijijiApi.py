@@ -127,9 +127,9 @@ def main():
    #repost adPostingFile
    parser = argparse.ArgumentParser(
            description="Post ads on Kijiji")
-   parser.add_argument('email', metavar='e', type=str,
+   parser.add_argument('email',  type=str,
            help='the email of your kijiji account')
-   parser.add_argument('password', metavar='p', type=str,
+   parser.add_argument('password', type=str,
            help='the password of your kijiji account')
    subparsers = parser.add_subparsers(help ='sub-command help')
    
@@ -143,6 +143,9 @@ def main():
    deleteParser = subparsers.add_parser('delete', help='delete a listed ad')
    deleteParser.add_argument('id',type=str, help='id of the ad you wish to delete')
    deleteParser.set_defaults(func=show_ads)
+
+   nukeParser = subparsers.add_parser('nuke', help='delete all listed ads')
+   nukeParser.set_defaults(func=delete_all)
 
    repostParser = subparsers.add_parser('repost', help='repost an existing ad')
    repostParser.add_argument('inf file', type=str, help='.inf file containing posting details')
@@ -165,8 +168,12 @@ def show_ads(args):
 def delete(args):
     print("Hi")
 
+def nuke(args):
+    print("nuking")
+
 def repost_ad(args):
     print("Hi!")
+
 
 #Try to delete ad with same name if possible
 #post new ad
