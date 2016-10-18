@@ -4,4 +4,6 @@ crackedphone.png
 cliva.PNG
 *.inf
 .*.py.swp
+.*
 .DS_Store
+myAd.html
