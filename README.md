@@ -13,4 +13,4 @@ This project has only been tested with python3.
 -Error handling
 -Modify GenerateInfFile to be more user friendly
 -Interact with KijijiApi with a Facebook bot?!
-
+-Put everything related to one posting in the same folder
