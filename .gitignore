@@ -3,5 +3,5 @@ __pycache__
 crackedphone.png
 cliva.PNG
 *.inf
-*.swp
+.*.py.swp
 .DS_Store
