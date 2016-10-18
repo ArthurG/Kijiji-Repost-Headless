@@ -2,4 +2,6 @@ ReallySecurePasswordModule.py
 __pycache__
 crackedphone.png
 cliva.PNG
-myAd.inf
+*.inf
+*.swp
+.DS_Store

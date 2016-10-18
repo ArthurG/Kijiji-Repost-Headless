@@ -52,13 +52,10 @@ def postAd(args):
     api.login(args.username, args.password)
     api.postAd(args.inf_file)
 
-def getAds(args):
+def showAds(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    return api.getAllAds()
-
-def showAds(args):
-    [print(adId+","+adName) for adName, adId in getAds()]
+    [print(adId+","+adName) for adName, adId in api.getAllAds()]
 
 def deleteAd(args):
     api = KijijiApi.KijijiApi()
