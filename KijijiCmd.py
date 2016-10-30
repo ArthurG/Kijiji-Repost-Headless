@@ -73,7 +73,10 @@ def repostAd(args):
         [key, val] = line.strip().rstrip("\n").split("=")
         if key =='postAdForm.title':
             delAdName = val
-    [api.deleteAd(adId) for adName, adId in api.getAllAds() if delAdName.strip() == adName]
+    try:
+        [api.deleteAd(adId) for adName, adId in api.getAllAds() if delAdName.strip() == adName]
+    except DeleteAdException:
+        pass
     api.postAd(args.inf_file)
 
 def nuke(args):
