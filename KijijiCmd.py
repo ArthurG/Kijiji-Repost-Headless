@@ -1,11 +1,9 @@
-import requests
-import json
-import bs4
-import re
-from ReallySecurePasswordModule import username, password 
 import argparse
 import KijijiApi
+import sys
 
+if sys.version_info < (3, 0):
+    raise Exception("This program requires Python 3.0 or greater")
 
 def main():
    ##Start here 
