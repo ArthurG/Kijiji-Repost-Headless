@@ -12,12 +12,12 @@ def main():
    #post adPostingFile
    #show
    #delete adId
-   #showPresentAds adId
+   #show
    #repost adPostingFile
    parser = argparse.ArgumentParser(
            description="Post ads on Kijiji")
-   parser.add_argument('username', help='username of your kijiji account')
-   parser.add_argument('password', help='password of your kijiji account')
+   parser.add_argument('-u', '--username', help='username of your kijiji account')
+   parser.add_argument('-p', '--password', help='password of your kijiji account')
 
    subparsers = parser.add_subparsers(help ='sub-command help')
    
@@ -25,6 +25,14 @@ def main():
    postParser.add_argument('inf_file', type=str, help='.inf file containing posting details')
    postParser.set_defaults(function=postAd)
 
+   folderParser = subparsers.add_parser('folder', help='post ad from folder')
+   folderParser.add_argument('folderName', type=str, help='folder containing ad details')
+   folderParser.set_defaults(function=postFolder)
+
+   repostFolderParser = subparsers.add_parser('repostFolder', help='post ad from folder')
+   repostFolderParser.add_argument('folderName', type=str, help='folder containing ad details')
+   repostFolderParser.set_defaults(function=repostFolder)
+   
    showParser = subparsers.add_parser('show', help='show currently listed ads')
    showParser.set_defaults(function=showAds)
 
@@ -42,8 +50,12 @@ def main():
    args = parser.parse_args()
    try:
        args.function(args)
-   except AttributeError:
-        parser.print_help()
+   except AttributeError as err:
+       parser.print_help()
+
+def postFolder(args):
+    api = KijijiApi.KijijiApi()
+    api.postFolder(args.folderName)
 
 def postAd(args):
     api = KijijiApi.KijijiApi()
@@ -76,6 +88,11 @@ def repostAd(args):
     except DeleteAdException:
         pass
     api.postAd(args.inf_file)
+
+def repostFolder(args):
+    #TODO: Function isn't working
+    api = KijijiApi.KijijiApi()
+    api.postFolder(args.folderName)
 
 def nuke(args):
     api = KijijiApi.KijijiApi()

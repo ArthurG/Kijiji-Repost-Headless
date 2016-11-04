@@ -3,6 +3,7 @@ import json
 import bs4
 import re
 import sys
+import os
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -41,7 +42,8 @@ class KijijiApi:
     #isLoggedIn: None -> bool
     #All function requires a logged in session to function correctly
     #logout: None -> None
-    #postAd: None -> adId
+    #postAd: PostingFile -> adId
+    #postFolder: FolderName -> adId
     #deleteAd: adId -> None
     #getAllAds: None -> list(vector(adname, adId))
 
@@ -104,17 +106,27 @@ class KijijiApi:
             uploadedImagesThumbnails.append(imgUrl)
         return uploadedImagesThumbnails
 
-    def postAd(self, postVarsFile):
-        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
-
+    def postAd(self, varsFile):
         data = {}
-        postVars = open(postVarsFile, 'rt')
+        postVars = open(varsFile, 'rt')
+        data={}
         for line in postVars:
             [key, val] = line.lstrip().rstrip("\n").split("=")
             data[key] = val
         postVars.close()
+        self.postItemUsingData(data)
+  
+    def postFolder(self, folderName):
+        if self.isLoggedIn():
+            self.logout()
+        os.chdir(folderName)
+        loginFile = open("login.inf", 'rt')
+        self.login(loginFile.readline().strip(), loginFile.readline().strip())
+        self.postAd("item.inf")
 
-        #Retrive tokens for website
+    def postItemUsingData(self, data):
+        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
+                #Retrive tokens for website
         xsrfToken = getToken(resp.text, 'ca.kijiji.xsrf.token') 
         fraudToken = getToken(resp.text, 'postAdForm.fraudToken')
         data['ca.kijiji.xsrf.token']=xsrfToken
