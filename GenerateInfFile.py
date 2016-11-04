@@ -1,6 +1,5 @@
 #TODO: Actual error handling
 
-from ReallySecurePasswordModule import googleGeolocationKey
 import requests
 import json
 from PostingCategory import *

@@ -1,7 +1,6 @@
 import sqlalchemy
 import requests
 import bs4
-from ReallySecurePasswordModule import username, password 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, sessionmaker
 import sqlalchemy.ext.declarative
