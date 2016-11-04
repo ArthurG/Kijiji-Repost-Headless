@@ -11,18 +11,23 @@ Automate Kijiji ad posting - Non-selenium version
 - start program by calling python KijijiCmd.py
 
 To Post an ad:
+
 `python KijijiCmd.py post -u (username) -p (password) myAd.inf (or another inf file)`
 
 To Repost an ad (delete ad if already posted):
+
 `python KijijiCmd.py repost -u (username) -p (password) myAd.inf (or another inf file)`
 
 To delete all ads:
+
 `python KijijiCmd.py nuke -u (username) -p (password)`
 
 To delete one ads:
+
 `python KijijiCmd.py delete (adId) -u (username) -p (password)`
 
 There are also interfaces for posting an ad from a folder:
+
 `python KijijiCmd.py postFolder (folderName)`
 
 Inside your folder, be sure to include all photos that you wish to upload as well, item.inf, login.inf (username + password on separate lines) and your photos
