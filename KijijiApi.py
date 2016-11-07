@@ -43,8 +43,8 @@ class KijijiApi:
     #All function requires a logged in session to function correctly
     #logout: None -> None
     #postAd: PostingFile -> adId
-    #postFolder: FolderName -> adId
     #deleteAd: adId -> None
+    #deleteAdUsingTitle: adTitle -> None
     #getAllAds: None -> list(vector(adname, adId))
 
     def __init__(self):
@@ -89,6 +89,11 @@ class KijijiApi:
         if ("OK" not in resp.text):
             raise DeleteAdException(resp.text)
 
+    def deleteAdUsingTitle(self, title):
+        allAds = self.getAllAds()
+        [self.deleteAd(adId) for delTitle, adId in allAds if delTitle == title]
+        
+
     def uploadImage(self, imageUrls=[],csv=""):
         #convert images from string and append them to the stuff to be uploaaded
         imageUrls.extend(csv.split(","))
@@ -114,17 +119,9 @@ class KijijiApi:
             [key, val] = line.lstrip().rstrip("\n").split("=")
             data[key] = val
         postVars.close()
-        self.postItemUsingData(data)
-  
-    def postFolder(self, folderName):
-        if self.isLoggedIn():
-            self.logout()
-        os.chdir(folderName)
-        loginFile = open("login.inf", 'rt')
-        self.login(loginFile.readline().strip(), loginFile.readline().strip())
-        self.postAd("item.inf")
+        self.postAdUsingData(data)
 
-    def postItemUsingData(self, data):
+    def postAdUsingData(self, data):
         resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
                 #Retrive tokens for website
         xsrfToken = getToken(resp.text, 'ca.kijiji.xsrf.token') 

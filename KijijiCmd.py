@@ -1,6 +1,7 @@
 import argparse
 import KijijiApi
 import sys
+import os
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -48,14 +49,25 @@ def main():
    repostParser.set_defaults(function=repostAd)
 
    args = parser.parse_args()
-   try:
-       args.function(args)
-   except AttributeError as err:
-       parser.print_help()
+   #try:
+   args.function(args)
+   #except AttributeError as err:
+    #   print(err)
+    #   parser.print_help()
+
+#HELPER FUNCTIONS
+def getFolderData(args):
+    args.inf_file = "item.inf"
+    cred_file = args.folderName+"/login.inf"
+    f = open(cred_file, 'r')
+    creds = [line.strip() for line in f]
+    args.username = creds[0] 
+    args.password = creds[1] 
 
 def postFolder(args):
-    api = KijijiApi.KijijiApi()
-    api.postFolder(args.folderName)
+    getFolderData(args)
+    os.chdir(args.folderName)
+    postAd(args)
 
 def postAd(args):
     api = KijijiApi.KijijiApi()
@@ -72,6 +84,9 @@ def deleteAd(args):
     api.login(args.username, args.password)
     api.deleteAd(args.id)
 
+def deleteAdUsingName(name):
+    api.delete(...)
+
 #Try to delete ad with same name if possible
 #post new ad
 def repostAd(args):
@@ -84,15 +99,15 @@ def repostAd(args):
         if key =='postAdForm.title':
             delAdName = val
     try:
-        [api.deleteAd(adId) for adName, adId in api.getAllAds() if delAdName.strip() == adName]
+        api.deleteAdUsingTitle(delAdName)
     except DeleteAdException:
         pass
     api.postAd(args.inf_file)
 
 def repostFolder(args):
-    #TODO: Function isn't working
-    api = KijijiApi.KijijiApi()
-    api.postFolder(args.folderName)
+    getFolderData(args)
+    os.chdir(args.folderName)
+    repostAd(args)
 
 def nuke(args):
     api = KijijiApi.KijijiApi()
@@ -101,4 +116,5 @@ def nuke(args):
     [api.deleteAd(adId) for adName, adId in allAds]
 
 if __name__ == "__main__":
+
     main()
