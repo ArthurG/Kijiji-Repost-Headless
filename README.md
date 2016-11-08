@@ -6,7 +6,7 @@ Automate Kijiji ad posting - Non-selenium version
 - This project requires python3. 
 - Required packages: python-requests, json, bs4, sqlalchemy
 - I recommend using pip install to install these packages
-- Generate a posting file (myAd.inf) by calling 'python GenerateInfFile.py'
+- Generate a posting file (myAd.inf) by calling `python GenerateInfFile.py` and following the prompts
 - Place all photo dependancies in the current directory
 - start program by calling python KijijiCmd.py
 
@@ -24,16 +24,23 @@ To delete all ads:
 
 To delete one ads:
 
-`python KijijiCmd.py delete (adId) -u (username) -p (password)`
+`python KijijiCmd.py -u (username) -p (password) delete (adId)`
 
-There are also interfaces for posting an ad from a folder:
+Alternatively, there are also interfaces for posting/reposting an ad from a folder. This makes it so you are not required to enter your username/password and may also be helpful if you choose to have multiple Kijiji accounts.
+Inside your folder, include ALL photos, `item.inf`, and `login.inf`.
+login.inf is as follows:
+`username
+password
+`
 
-`python KijijiCmd.py postFolder (folderName)`
+To post from folder:
+`python KijijiCmd.py folder (folderName)`
+To repost from folder:
+`python KijijiCmd.py repostFolder (folderName)`
 
-Inside your folder, be sure to include all photos that you wish to upload as well, item.inf, login.inf (username + password on separate lines) and your photos
 
 ##Issues
-This project is still in the works, there are likely bugs and problems. Please open a **GitHub issue** if you discover anything I should know. I will be glad to help!
+This project is still in the works, there are likely bugs and problems. Please open a **GitHub issue** if you discover anything I should fix. I will be glad to help!
 
 ##TODO 
 - Error handling
