@@ -84,8 +84,9 @@ def deleteAd(args):
     api.login(args.username, args.password)
     api.deleteAd(args.id)
 
-def deleteAdUsingName(name):
-    api.delete(...)
+def deleteAdUsingTitle(name):
+    api = KijijiApi.KijijiApi()
+    api.deleteAdUsingTitle(name)
 
 #Try to delete ad with same name if possible
 #post new ad

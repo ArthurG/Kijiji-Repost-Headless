@@ -91,7 +91,7 @@ class KijijiApi:
 
     def deleteAdUsingTitle(self, title):
         allAds = self.getAllAds()
-        [self.deleteAd(adId) for delTitle, adId in allAds if delTitle == title]
+        [self.deleteAd(i) for t, i in allAds if t.strip() == title.strip()]
         
 
     def uploadImage(self, imageUrls=[],csv=""):
