@@ -10,6 +10,8 @@ Automate Kijiji ad posting - Non-selenium version
 - Place all photo dependancies in the current directory
 - start program by calling python KijijiCmd.py
 
+##Usage
+
 To Post an ad:
 
 `python KijijiCmd.py post -u (username) -p (password) myAd.inf (or another inf file)`
