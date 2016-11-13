@@ -10,19 +10,23 @@ Automate Kijiji ad posting - Non-selenium version
 - Place all photo dependancies in the current directory
 - start program by calling python KijijiCmd.py
 
+#Requirements
+-The program currently requires that you post at LEAST one photo
+-As per Kijiji requirements, the item description must be at least 10 characters
+
 ##Usage
 
-To Post an ad:
+To post myAd.inf:
 
-`python KijijiCmd.py post -u (username) -p (password) myAd.inf (or another inf file)`
+`python KijijiCmd.py -u (username) -p (password) post myAd.inf
 
-To Repost an ad (delete ad if already posted):
+To repost myAd.inf (Will delete the ad if it is already posted prior to posting):
 
-`python KijijiCmd.py repost -u (username) -p (password) myAd.inf (or another inf file)`
+`python KijijiCmd.py -u (username) -p (password) repost myAd.inf (or another inf file)`
 
 To delete all ads:
 
-`python KijijiCmd.py nuke -u (username) -p (password)`
+`python KijijiCmd.py -u (username) -p (password) nuke `
 
 To delete one ads:
 
@@ -36,13 +40,16 @@ password
 `
 
 To post from folder:
+
 `python KijijiCmd.py folder (folderName)`
+
 To repost from folder:
+
 `python KijijiCmd.py repostFolder (folderName)`
 
 
 ##Issues
-This project is still in the works, there are likely bugs and problems. Please open a **GitHub issue** if you discover anything I should fix. I will be glad to help!
+Please open a GitHub issue or pull request if you discover problems. 
 
 ##TODO 
 - Error handling
