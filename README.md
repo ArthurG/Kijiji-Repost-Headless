@@ -1,22 +1,26 @@
 # KijijiBotV2
-####Send POST Requests to Kijiji... to post your ads
+####Send POST requests to Kijiji... to post your ads
 
-##Setup + Usage
+##Setup
 - This project requires python3 with: python-requests, json, bs4, sqlalchemy
-- Generate a posting file (myAd.inf) by calling `python GenerateInfFile.py` and following the prompts
-- Edit the location0 field in myAd.inf with correct value for your city. This can be found by doing an inspect element on the location dropdown on the Kijiji homepage and finding the the correct li#groupXXXXXXX for your city. 
-- Place all photo dependancies in the current directory
-- start program by calling python KijijiCmd.py
+- It is recommended you install these with pip install
 
-#Requirements
+##Requirements
 - The program currently requires that you post at LEAST one photo
 - As per Kijiji requirements, the item description must be at least 10 characters
 
 ##Usage
 
+###Generating a .inf file for an ad
+- Generate a posting file (myAd.inf) with the command `python GenerateInfFile.py` and following the prompts
+- Edit the location0 field in myAd.inf with correct value for your city. This can be found by doing an inspect element on the location dropdown on the Kijiji homepage and finding the the correct li#groupXXXXXXX for your city. 
+- Place all photo dependancies in the current directory
+
+
+###Posting + Reposting an ad
 To post myAd.inf:
 
-`python KijijiCmd.py -u (username) -p (password) post myAd.inf
+`python KijijiCmd.py -u (username) -p (password) post myAd.inf `
 
 To repost myAd.inf (Will delete the ad if it is already posted prior to posting):
 
@@ -30,10 +34,13 @@ To delete one ads:
 
 `python KijijiCmd.py -u (username) -p (password) delete (adId)`
 
-Alternatively, there are also interfaces for posting/reposting an ad from a folder. This makes it so you are not required to enter your username/password and may also be helpful if you choose to have multiple Kijiji accounts.
+Alternatively, there are also interfaces for posting/reposting an ad from a folder, especially useful if you're too lazy to enter your username/password every time or you have multiple Kijiji accounts.
+
 Inside your folder, include ALL photos, `item.inf`, and `login.inf`.
 login.inf is as follows:
+
 `username
+
 password
 `
 
