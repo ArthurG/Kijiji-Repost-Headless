@@ -1,6 +1,5 @@
 # KijijiBotV2
-Automate Kijiji ad posting - Non-selenium version
-###Send POST Requests to Kijiji... to post your ads
+####Send POST Requests to Kijiji... to post your ads
 
 ##Setup
 - This project requires python3. 
@@ -11,8 +10,8 @@ Automate Kijiji ad posting - Non-selenium version
 - start program by calling python KijijiCmd.py
 
 #Requirements
--The program currently requires that you post at LEAST one photo
--As per Kijiji requirements, the item description must be at least 10 characters
+- The program currently requires that you post at LEAST one photo
+- As per Kijiji requirements, the item description must be at least 10 characters
 
 ##Usage
 
