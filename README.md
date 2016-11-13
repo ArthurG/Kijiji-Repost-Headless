@@ -1,11 +1,10 @@
 # KijijiBotV2
 ####Send POST Requests to Kijiji... to post your ads
 
-##Setup
-- This project requires python3. 
-- Required packages: python-requests, json, bs4, sqlalchemy
-- I recommend using pip install to install these packages
+##Setup + Usage
+- This project requires python3 with: python-requests, json, bs4, sqlalchemy
 - Generate a posting file (myAd.inf) by calling `python GenerateInfFile.py` and following the prompts
+- Edit the location0 field in myAd.inf with correct value for your city. This can be found by doing an inspect element on the location dropdown on the Kijiji homepage and finding the the correct li#groupXXXXXXX for your city. 
 - Place all photo dependancies in the current directory
 - start program by calling python KijijiCmd.py
 
