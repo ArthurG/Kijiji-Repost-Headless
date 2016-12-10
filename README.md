@@ -36,13 +36,11 @@ To delete one ads:
 
 Alternatively, there are also interfaces for posting/reposting an ad from a folder, especially useful if you're too lazy to enter your username/password every time or you have multiple Kijiji accounts.
 
-Inside your folder, include ALL photos, `item.inf`, and `login.inf`.
-login.inf is as follows:
+Inside your folder, include ALL photos, `item.inf`, and `login.inf` which is as follows:
 
-`username
+` username
 
-password
-`
+password `
 
 To post from folder:
 

@@ -4,6 +4,7 @@ import bs4
 import re
 import sys
 import os
+from multiprocessing import Pool
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -35,6 +36,25 @@ def getToken(html, tokenName):
     soup = bs4.BeautifulSoup(html, 'html.parser')
     res = soup.select('[name='+tokenName+']')[0]
     return res['value']
+
+def uploadOneImage(path):
+    imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
+    for i in range (0, 3):
+        files = {'file': open(path, 'rb')}
+        ses = requests.Session()
+        r = ses.post(imageUploadUrl, files = files)
+        if (r.status_code != 200):
+            raise PostAdException(r.text)
+        try:
+            imageTree = json.loads(r.text)
+            imgUrl = imageTree['thumbnailUrl']
+            print("Upload success: {}".format(path))
+            return imgUrl
+        except KeyError as e:
+            print("Uploadd failed: {}".format(path))
+            pass
+    return;
+
 
 
 class KijijiApi:
@@ -93,23 +113,16 @@ class KijijiApi:
         allAds = self.getAllAds()
         [self.deleteAd(i) for t, i in allAds if t.strip() == title.strip()]
         
-
     def uploadImage(self, imageUrls=[],csv=""):
         #convert images from string and append them to the stuff to be uploaaded
         imageUrls.extend(csv.split(","))
         #Array to store images before they're returned
-        uploadedImagesThumbnails = []
+        images = []
 
         imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
-        for imageFile in imageUrls:
-            files = {'file': open(imageFile, 'rb')}
-            r = requests.post(imageUploadUrl, files = files)
-            if (r.status_code != 200):
-                raise PostAdException(r.text)
-            imageTree = json.loads(r.text)
-            imgUrl = imageTree['thumbnailUrl']
-            uploadedImagesThumbnails.append(imgUrl)
-        return uploadedImagesThumbnails
+        with Pool(5) as p:
+            images = p.map(uploadOneImage, imageUrls)
+        return [image for image in images if image is not None]
 
     def postAd(self, varsFile):
         data = {}
@@ -122,17 +135,18 @@ class KijijiApi:
         self.postAdUsingData(data)
 
     def postAdUsingData(self, data):
+        #Upload the images
+        imageList = self.uploadImage(csv=data['imageCsv'])
+        data['images'] = ",".join(imageList)
+        del data['imageCsv']
+        
         resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
-                #Retrive tokens for website
+        
+        #Retrive tokens for website
         xsrfToken = getToken(resp.text, 'ca.kijiji.xsrf.token') 
         fraudToken = getToken(resp.text, 'postAdForm.fraudToken')
         data['ca.kijiji.xsrf.token']=xsrfToken
         data['postAdForm.fraudToken']=fraudToken
-
-        #Upload the images
-        imageList = self.uploadImage(csv=data['imageCsv'])
-        data['images'] = ",".join(imageList)
-        del data['imageCsv'] 
 
         #upload the ad itself
         newAdUrl="https://www.kijiji.ca/p-submit-ad.html"
