@@ -37,6 +37,7 @@ def getToken(html, tokenName):
     return res['value']
 
 def uploadOneImage(imgFile):
+    #Try three times to upload the file. If successful, return the url.
     imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
     for i in range (0, 3):
         files = {'file': imgFile}
@@ -101,7 +102,7 @@ class KijijiApi:
         params = {'Action': 'DELETE_ADS',
                 'Mode': 'ACTIVE',
                 'needsRedirect': 'false',
-                'ads': '[{"adId":"'+adId+'","reason":"PREFER_NOT_TO_SAY","otherReason":""}]',
+                'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(str(adId)),
                 'ca.kijiji.xsrf.token': getToken(myAdsPage.text, 'ca.kijiji.xsrf.token')
                 }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data = params)
@@ -112,6 +113,8 @@ class KijijiApi:
         allAds = self.getAllAds()
         [self.deleteAd(i) for t, i in allAds if t.strip() == title.strip()]
         
+    #Allow user to pass in photos (as a array of string) they want to upload
+    #Upload images concurrently using Pool
     def uploadImage(self, imageFiles=[]):
         images = []
 
@@ -120,12 +123,14 @@ class KijijiApi:
             images = p.map(uploadOneImage, imageFiles)
         return [image for image in images if image is not None]
     
-    #Allow user to pass in photos (as a file) they want to upload
+    #Data is a Dictionary that represents the data that will be posted to Kijijiserver
+    #imageFiles represents a bunch of opened files (in string format) that need to be uploaded 
     def postAdUsingData(self, data, imageFiles=[]):
         #Upload the images
         imageList = self.uploadImage(imageFiles)
         data['images'] = ",".join(imageList)
         
+        #Load ad posting page
         resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
         
         #Retrive tokens for website
@@ -134,13 +139,14 @@ class KijijiApi:
         data['ca.kijiji.xsrf.token']=xsrfToken
         data['postAdForm.fraudToken']=fraudToken
 
-        #upload the ad itself
+        #Upload the ad itself
         newAdUrl="https://www.kijiji.ca/p-submit-ad.html"
         resp = self.session.post(newAdUrl, data=data)
         if (resp.status_code != 200 or \
                 "message-container success" not in resp.text):
             raise PostAdException(resp.text)
 
+        #Get adId and return it
         newCookieWithAdId = resp.headers['Set-Cookie']
         adId = re.search('\d+', newCookieWithAdId).group()
         return adId
