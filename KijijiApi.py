@@ -3,7 +3,6 @@ import json
 import bs4
 import re
 import sys
-import os
 from multiprocessing import Pool
 
 if sys.version_info < (3, 0):
@@ -37,10 +36,10 @@ def getToken(html, tokenName):
     res = soup.select('[name='+tokenName+']')[0]
     return res['value']
 
-def uploadOneImage(path):
+def uploadOneImage(imgFile):
     imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
     for i in range (0, 3):
-        files = {'file': open(path, 'rb')}
+        files = {'file': imgFile}
         ses = requests.Session()
         r = ses.post(imageUploadUrl, files = files)
         if (r.status_code != 200):
@@ -48,10 +47,10 @@ def uploadOneImage(path):
         try:
             imageTree = json.loads(r.text)
             imgUrl = imageTree['thumbnailUrl']
-            print("Upload success: {}".format(path))
+            print("Image Upload success")
             return imgUrl
         except KeyError as e:
-            print("Uploadd failed: {}".format(path))
+            print("Image Upload failed")
             pass
     return;
 
@@ -113,32 +112,19 @@ class KijijiApi:
         allAds = self.getAllAds()
         [self.deleteAd(i) for t, i in allAds if t.strip() == title.strip()]
         
-    def uploadImage(self, imageUrls=[],csv=""):
-        #convert images from string and append them to the stuff to be uploaaded
-        imageUrls.extend(csv.split(","))
-        #Array to store images before they're returned
+    def uploadImage(self, imageFiles=[]):
         images = []
 
         imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
         with Pool(5) as p:
-            images = p.map(uploadOneImage, imageUrls)
+            images = p.map(uploadOneImage, imageFiles)
         return [image for image in images if image is not None]
-
-    def postAd(self, varsFile):
-        data = {}
-        postVars = open(varsFile, 'rt')
-        data={}
-        for line in postVars:
-            [key, val] = line.lstrip().rstrip("\n").split("=")
-            data[key] = val
-        postVars.close()
-        self.postAdUsingData(data)
-
-    def postAdUsingData(self, data):
+    
+    #Allow user to pass in photos (as a file) they want to upload
+    def postAdUsingData(self, data, imageFiles=[]):
         #Upload the images
-        imageList = self.uploadImage(csv=data['imageCsv'])
+        imageList = self.uploadImage(imageFiles)
         data['images'] = ",".join(imageList)
-        del data['imageCsv']
         
         resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
         

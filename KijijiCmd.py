@@ -64,15 +64,33 @@ def getFolderData(args):
     args.username = creds[0] 
     args.password = creds[1] 
 
+def getInfDetails(inf_file):
+    data = {}
+    infFileLines = open(inf_file, 'rt')
+    data={}
+    for line in infFileLines:
+        [key, val] = line.lstrip().rstrip("\n").split("=")
+        data[key] = val
+    infFileLines.close()
+    
+    ##open picture files
+    files=[]
+    for picture in data['imageCsv'].split(","):
+        f = open(picture, 'rb').read()
+        files.append(f)
+    return [data, files]
+
+##Actual Functions called from main
 def postFolder(args):
     getFolderData(args)
     os.chdir(args.folderName)
     postAd(args)
 
 def postAd(args):
+    [data, imageFiles] = getInfDetails(args.inf_file)
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    api.postAd(args.inf_file)
+    api.postAdUsingData(data, imageFiles)
 
 def showAds(args):
     api = KijijiApi.KijijiApi()
@@ -103,7 +121,7 @@ def repostAd(args):
         api.deleteAdUsingTitle(delAdName)
     except DeleteAdException:
         pass
-    api.postAd(args.inf_file)
+    postAd(args)
 
 def repostFolder(args):
     getFolderData(args)
