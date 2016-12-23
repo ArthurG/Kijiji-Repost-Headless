@@ -91,7 +91,7 @@ class KijijiApi:
 
     def isLoggedIn(self):
         indexPageText = self.session.get('https://www.kijiji.ca/m-my-ads.html/').text
-        return 'm-logout.html' in indexPageText 
+        return 'Sign Out' in indexPageText 
 
     def logout(self):
         resp = self.session.get('https://www.kijiji.ca/m-logout.html')
