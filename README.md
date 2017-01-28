@@ -3,7 +3,7 @@
 
 ##Setup
 - This project requires python3 with: python-requests, json, bs4, sqlalchemy
-- It is recommended you install these with pip install
+- run pip3 install -r requirements.txt
 
 ##Requirements
 - The program currently requires that you post at LEAST one photo
@@ -55,6 +55,7 @@ To repost from folder:
 Please open a GitHub issue or pull request if you discover problems. 
 
 ##TODO 
-- Error handling
+- Error handling -> automatically send bugs + logs to developer
 - Modify GenerateInfFile to be more user friendly
-- Interact with KijijiApi with a Facebook bot?!
+- Organize files like a standard module
+- Do some magic to avoid reuploading the same pictures again and again
