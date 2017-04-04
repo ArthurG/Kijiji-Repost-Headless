@@ -39,7 +39,7 @@ def getToken(html, tokenName):
 def uploadOneImage(imgFile):
     #Try three times to upload the file. If successful, return the url.
     imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
-    for i in range (0, 3):
+    for i in range(0, 3):
         files = {'file': imgFile}
         ses = requests.Session()
         r = ses.post(imageUploadUrl, files = files)
@@ -48,12 +48,12 @@ def uploadOneImage(imgFile):
         try:
             imageTree = json.loads(r.text)
             imgUrl = imageTree['thumbnailUrl']
-            print("Image Upload success")
+            print("Image Upload success on try #{}".format(i+1))
             return imgUrl
         except KeyError as e:
-            print("Image Upload failed")
+            print("Image Upload failed on try #{}".format(i+1))
             pass
-    return;
+    return
 
 
 
@@ -99,10 +99,11 @@ class KijijiApi:
     def deleteAd(self, adId):
         myAdsPage = self.session.get('https://www.kijiji.ca/m-my-ads.html')
 
-        params = {'Action': 'DELETE_ADS',
+        params = {
+                'Action': 'DELETE_ADS',
                 'Mode': 'ACTIVE',
                 'needsRedirect': 'false',
-                'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(str(adId)),
+                'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(adId),
                 'ca.kijiji.xsrf.token': getToken(myAdsPage.text, 'ca.kijiji.xsrf.token')
                 }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data = params)
@@ -117,8 +118,6 @@ class KijijiApi:
     #Upload images concurrently using Pool
     def uploadImage(self, imageFiles=[]):
         images = []
-
-        imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
         with Pool(5) as p:
             images = p.map(uploadOneImage, imageFiles)
         return [image for image in images if image is not None]
