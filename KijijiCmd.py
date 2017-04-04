@@ -2,6 +2,7 @@ import argparse
 import KijijiApi
 import sys
 import os
+from time import sleep
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -111,7 +112,6 @@ def deleteAdUsingTitle(name):
 def repostAd(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    myAds = api.getAllAds()
     delAdName = ""
     for line in open(args.inf_file, 'rt'):
         [key, val] = line.strip().rstrip("\n").split("=")
@@ -119,8 +119,12 @@ def repostAd(args):
             delAdName = val
     try:
         api.deleteAdUsingTitle(delAdName)
+        print("Existing ad deleted before reposting")
     except DeleteAdException:
+        print("Did not find an existing ad with matching title, skipping ad deletion")
         pass
+    # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
+    sleep(180)
     postAd(args)
 
 def repostFolder(args):
