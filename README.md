@@ -1,5 +1,5 @@
 # KijijiBotV2
-#### Send POST requests to Kijiji... to post your ads
+#### Send  POST requests to Kijiji... to post your ads
 
 ## Setup
 - This project requires python3 with: python-requests, json, bs4, sqlalchemy
