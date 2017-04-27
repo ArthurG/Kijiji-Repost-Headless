@@ -72,20 +72,18 @@ class KijijiApi:
         self.session = requests.Session()
 
     def login(self, username, password):
-        url = 'http://www.kijiji.ca/h-kitchener-waterloo/1700212'
-        resp = self.session.get(url)
+        loginUrl = 'https://www.kijiji.ca/t-login.html'
+        resp = self.session.get(loginUrl)
 
-        url = 'https://www.kijiji.ca/t-login.html'
-        resp = self.session.get(url)
-
-        payload = {'emailOrNickname': username,
+        payload = {
+                'emailOrNickname': username,
                 'password': password,
                 'rememberMe': 'true',
                 '_rememberMe': 'on',
                 'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
-                'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
+                'targetUrl': getToken(resp.text, 'targetUrl')
                 }
-        resp = self.session.post(url, data = payload)
+        resp = self.session.post(loginUrl, data = payload)
         if not self.isLoggedIn():
             raise SignInException(resp.text)
 
@@ -94,7 +92,7 @@ class KijijiApi:
         return 'Sign Out' in indexPageText 
 
     def logout(self):
-        resp = self.session.get('https://www.kijiji.ca/m-logout.html')
+        self.session.get('https://www.kijiji.ca/m-logout.html')
 
     def deleteAd(self, adId):
         myAdsPage = self.session.get('https://www.kijiji.ca/m-my-ads.html')

@@ -96,7 +96,7 @@ def postAd(args):
 def showAds(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    [print(adId+","+adName) for adName, adId in api.getAllAds()]
+    [print("{} '{}'".format(adId, adName)) for adName, adId in api.getAllAds()]
 
 def deleteAd(args):
     api = KijijiApi.KijijiApi()
