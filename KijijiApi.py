@@ -81,7 +81,7 @@ class KijijiApi:
                 'rememberMe': 'true',
                 '_rememberMe': 'on',
                 'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
-                'targetUrl': getToken(resp.text, 'targetUrl')
+                'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
                 }
         resp = self.session.post(loginUrl, data = payload)
         if not self.isLoggedIn():
@@ -128,7 +128,7 @@ class KijijiApi:
         data['images'] = ",".join(imageList)
         
         #Load ad posting page
-        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=772')
+        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=773')
         
         #Retrive tokens for website
         xsrfToken = getToken(resp.text, 'ca.kijiji.xsrf.token') 
