@@ -19,7 +19,7 @@ def getAddressMap():
     ans['lat'] = str(latlng['lat'])
     ans['lng'] = str(latlng['lng'])
     postalCode = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "postal_code" in item['types'] ][0]['short_name']
-    city = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "locality" in item['types'] ][0]['short_name']
+    city = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "administrative_area_level_3" in item['types'] or "locality" in item['types'] ][0]['short_name']
     province = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "administrative_area_level_1" in item['types'] ][0]['short_name']
     ans['postal_code'] = postalCode
     ans['city'] = city
