@@ -3,6 +3,7 @@
 import requests
 import json
 from PostingCategory import *
+from GetIDs import get_location_and_area_ids
 adType = ['OFFER', 'WANTED']
 priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 
@@ -69,8 +70,7 @@ def getDescription():
 categoryMap = pickCategory()
 addressMap = getAddressMap()
 # TODO: Figure out a way to determine appropriate location ID and location area ID from geolocation coords
-locationId = "1700212"
-locationArea = "1700209"
+locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
 title = input("Ad title: ")
 description = getDescription()
 print("Ad price type:")
