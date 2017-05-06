@@ -37,7 +37,7 @@ def getEnum(array):
 def pickCategory():
     ans = {}
     while True:
-        keyword = input("Provide a category keyword to search for: ")
+        keyword = input("Please provide a category keyword to search for: ")
         possibleCategories = sqliteSession.query(PostingCategory).filter(PostingCategory.name.like("%"+keyword+"%"))
         if possibleCategories.count() < 1:
             print("Could not find any categories using the given keyword. Try again.")
@@ -45,14 +45,42 @@ def pickCategory():
             break
     for i, cat in enumerate(possibleCategories):
         print("{:>2d} - {}".format(i+1, cat))
-    response = int(input("Select a category from the list above (choose number): "))
-    selectedCategory = possibleCategories[response-1]
+
+    # make sure the input is a number and a valid index
+    while True:
+        response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
+
+        if response == "0":
+            print()  # empty line
+            return None  # this will restart pickCategory
+
+        if response.isdigit():
+            if 0 < int(response) <= possibleCategories.count():
+                selectedCategory = possibleCategories[int(response) - 1]
+                break
+
+        print("Enter a valid number!")
+
     ans['category'] = selectedCategory.kijijiId
     for attribute in selectedCategory.attribute:
         for i, attrValue in enumerate(attribute.acceptableValue):
             print(i+1, attrValue.value)
-        response = int(input("Choose most relevant category relating to " + attribute.kijijiName + ": "))
-        ans[attribute.kijijiName] = attribute.acceptableValue[response-1].kijijiValue
+
+        # make sure the input is a number and a valid index
+        while True:
+            response = input("Choose most relevant category relating to " + attribute.kijijiName + " [To restart, enter 0] : ")
+
+            if response == "0":
+                print()  # empty line
+                return None  # this will restart pickCategory
+
+            if response.isdigit():
+                if 0 < int(response) <= possibleCategories.count():
+                    ans[attribute.kijijiName] = attribute.acceptableValue[int(response) - 1].kijijiValue
+                    break
+
+            print("Enter a valid number!")
+
     return ans
 
 # Multiline ad description
@@ -61,15 +89,26 @@ def getDescription():
     print("Enter multiline ad description. Type 'EOF' on a new line to finish.")
     while True:
         line = input()
-        if line == "EOF":
+        if line.upper() == "EOF":
             break
         contents.append(line)
     return "\\n".join(contents)
 
 
-categoryMap = pickCategory()
+print("****************************************************************")
+print("* Creating the myAd.inf file. Please answer all the questions. *")
+print("****************************************************************\n")
+
+print("Your ad must be submitted in a specific category.")
+
+while True:  # user is able to restart the category picker if anithing goes wrong
+    categoryMap = pickCategory()
+    if categoryMap != None:
+        break
+    else:
+        continue
+
 addressMap = getAddressMap()
-# TODO: Figure out a way to determine appropriate location ID and location area ID from geolocation coords
 locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
 title = input("Ad title: ")
 description = getDescription()
@@ -104,3 +143,5 @@ f.write("featuresForm.topAdDuration=7"+"\n")
 f.write("submitType=saveAndCheckout"+"\n")
 f.write("imageCsv="+photos+"\n")
 f.close()
+
+print("myAd.inf file created. Use this file to post your ad.")

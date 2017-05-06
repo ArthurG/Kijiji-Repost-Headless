@@ -1,84 +1,50 @@
-import codecs
-from bs4 import BeautifulSoup
+import json
+import requests
 
 
-def dictify(ul, area_id=None):
+def find_where(d, area_id=None):
     """
-    :param ul: the top UL of your HTML file
-    :return: nested dictionnaries of all the cities/regions IDs
+    :param d: dictionnary available here: http://www.kijiji.ca/j-locations.json
+    :param area_id: string, parent's region's ID 
+    :return: tuple, containing the location id and area id of the selected_dict region 
     """
-
-    result = {}
-    if area_id:
-        result['area_id'] = area_id
-
-    for li in ul.find_all("li", recursive=False):
-        key = li.find('a').get('title')
-        id = li.get('id').strip('group-')
-        ul = li.find("ul")
-
-        if not key.startswith("All of"):
-            if ul:
-                result[key] = dictify(ul, id)
-            else:
-                result[key] = id
-
-    return result
-
-
-def find_where(d):
-    """
-    :param d: a dictionnary
-    :return: a tuple containing the location id and area id of the selected region
-    """
-    keys = sorted(d.keys())
+    list_of_dicts = sorted(d['children'], key=lambda k: k['nameEn'])
 
     print()  # empty space
 
     # print a numbered list (starting with number 1) of all the regions
-    for num, name in enumerate(keys, 1):
-        if not name == "area_id":
-            print(num, "-", name)
+    for num, dictionary in enumerate(list_of_dicts, 1):
+        print(num, "-", dictionary['nameEn'])
 
     # make sure the input is a number and a valid index
     while True:
-        answer = input('\nWhere are you?')
-
-        if answer.isdigit():
-            if 0 < int(answer) <= len(keys):
-
-                # getting the value
-                value = d[keys[int(answer) - 1]]
-
+        index = input('\nWhere are you?')
+        if index.isdigit():
+            if 0 < int(index) <= len(list_of_dicts):
+                selected_dict = list_of_dicts[int(index) - 1]
                 break
-
         print("Enter a valid number!")
 
-    # if the selected value is a dictionnary, we list it again
-    if isinstance(value, dict):
-        return find_where(value)
+    # if the selected dictionnary has children, we list it again
+    if len(selected_dict['children']) > 0:
+        return find_where(selected_dict, selected_dict['id'])
 
     # else we return the location
-    print("Here's your location ID:", value)
-    print("And your location area:", d['area_id'])
+    print("Here's your location ID:", selected_dict['id'])
+    print("And your location area:", area_id)
 
-    return (value, d['area_id'])
+    return (selected_dict['id'], area_id)
 
 
 def get_location_and_area_ids():
-    # a copy/paste of the dropdown list source code
-    f = codecs.open('kijiji_dropdown.html', 'r', 'utf-8')
+    locations_url = 'http://www.kijiji.ca/j-locations.json'
+    locations_page = requests.get(locations_url)
+    # get rid of javascript variable name and trailing semi-colon
+    locations_data = locations_page.text.split(" = ")[1].strip()[:-1]
+    locations_dict = json.loads(locations_data)
 
-    soup = BeautifulSoup(f, 'lxml')
+    return find_where(locations_dict)
 
-    # turn the top UL of the HTML file into a dictionnary
-    provinces = dictify(soup.body.ul)
-
-    return find_where(provinces)
-
-    # from pprint import pprint
-    # pprint(provinces)
-    # print(provinces['Québec']['Greater Montréal']['Longueuil / South Shore'])
 
 if __name__ == "__main__":
     get_location_and_area_ids()
