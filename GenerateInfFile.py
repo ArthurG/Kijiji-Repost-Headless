@@ -3,6 +3,7 @@
 import requests
 import json
 from PostingCategory import *
+from GetIDs import get_location_and_area_ids
 adType = ['OFFER', 'WANTED']
 priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 
@@ -32,11 +33,24 @@ def getEnum(array):
     response = int(input("Choose one: "))
     return array[response-1]
 
+def restart_function(func):
+    """
+    :param func: a function that returns None if it needs to be rerun 
+    :return: the value returned by func
+    """
+    while True:
+        returned_value = func()
+        if returned_value == None:
+            continue
+        else:
+            break
+    return returned_value
+
 #{'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
 def pickCategory():
     ans = {}
     while True:
-        keyword = input("Provide a category keyword to search for: ")
+        keyword = input("Please provide a category keyword to search for: ")
         possibleCategories = sqliteSession.query(PostingCategory).filter(PostingCategory.name.like("%"+keyword+"%"))
         if possibleCategories.count() < 1:
             print("Could not find any categories using the given keyword. Try again.")
@@ -44,14 +58,36 @@ def pickCategory():
             break
     for i, cat in enumerate(possibleCategories):
         print("{:>2d} - {}".format(i+1, cat))
-    response = int(input("Select a category from the list above (choose number): "))
-    selectedCategory = possibleCategories[response-1]
+
+    # make sure the input is a number and a valid index
+    while True:
+        response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
+        if response == "0":
+            print()  # empty line
+            return None  # this will restart pickCategory
+        if response.isdigit():
+            if 0 < int(response) <= possibleCategories.count():
+                selectedCategory = possibleCategories[int(response) - 1]
+                break
+        print("Enter a valid number!")
+
     ans['category'] = selectedCategory.kijijiId
     for attribute in selectedCategory.attribute:
         for i, attrValue in enumerate(attribute.acceptableValue):
             print(i+1, attrValue.value)
-        response = int(input("Choose most relevant category relating to " + attribute.kijijiName + ": "))
-        ans[attribute.kijijiName] = attribute.acceptableValue[response-1].kijijiValue
+
+        # make sure the input is a number and a valid index
+        while True:
+            response = input("Choose most relevant category relating to " + attribute.kijijiName + " [To restart, enter 0] : ")
+            if response == "0":
+                print()  # empty line
+                return None  # this will restart pickCategory
+            if response.isdigit():
+                if 0 < int(response) <= len(attribute.acceptableValue):
+                    ans[attribute.kijijiName] = attribute.acceptableValue[int(response) - 1].kijijiValue
+                    break
+            print("Enter a valid number!")
+
     return ans
 
 # Multiline ad description
@@ -60,17 +96,21 @@ def getDescription():
     print("Enter multiline ad description. Type 'EOF' on a new line to finish.")
     while True:
         line = input()
-        if line == "EOF":
+        if line.upper() == "EOF":
             break
         contents.append(line)
     return "\\n".join(contents)
 
 
-categoryMap = pickCategory()
+print("****************************************************************")
+print("* Creating the myAd.inf file. Please answer all the questions. *")
+print("****************************************************************\n")
+
+print("Your ad must be submitted in a specific category.")
+
+categoryMap = restart_function(pickCategory)
 addressMap = getAddressMap()
-# TODO: Figure out a way to determine appropriate location ID and location area ID from geolocation coords
-locationId = "1700212"
-locationArea = "1700209"
+locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
 title = input("Ad title: ")
 description = getDescription()
 print("Ad price type:")
@@ -104,3 +144,5 @@ f.write("featuresForm.topAdDuration=7"+"\n")
 f.write("submitType=saveAndCheckout"+"\n")
 f.write("imageCsv="+photos+"\n")
 f.close()
+
+print("myAd.inf file created. Use this file to post your ad.")
