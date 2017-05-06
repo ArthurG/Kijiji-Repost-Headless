@@ -34,25 +34,17 @@ def getEnum(array):
     return array[response-1]
 
 def restart_function(func):
-    while True:  # user is able to restart the category picker if anithing goes wrong
-        print("go", func)
-        result = func
-        if result != None:
-            break
-        else:
+    """
+    :param func: a function that returns None if it needs to be rerun 
+    :return: the value returned by func
+    """
+    while True:
+        returned_value = func()
+        if returned_value == None:
             continue
-    return result
-
-def div_decorate(func):
-    def func_wrapper():
-        while True:
-            result = func()
-            if result != None:
-                return result
-            else:
-                continue
-
-    return func_wrapper
+        else:
+            break
+    return returned_value
 
 #{'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
 def pickCategory():
@@ -91,7 +83,7 @@ def pickCategory():
                 print()  # empty line
                 return None  # this will restart pickCategory
             if response.isdigit():
-                if 0 < int(response) <= possibleCategories.count():
+                if 0 < int(response) <= len(attribute.acceptableValue):
                     ans[attribute.kijijiName] = attribute.acceptableValue[int(response) - 1].kijijiValue
                     break
             print("Enter a valid number!")
@@ -116,9 +108,7 @@ print("****************************************************************\n")
 
 print("Your ad must be submitted in a specific category.")
 
-categoryMap = div_decorate(pickCategory())
-print("!!!!!!!!!!", categoryMap)
-input("YO")
+categoryMap = restart_function(pickCategory)
 addressMap = getAddressMap()
 locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
 title = input("Ad title: ")
