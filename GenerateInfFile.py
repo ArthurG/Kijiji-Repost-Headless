@@ -49,16 +49,13 @@ def pickCategory():
     # make sure the input is a number and a valid index
     while True:
         response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
-
         if response == "0":
             print()  # empty line
             return None  # this will restart pickCategory
-
         if response.isdigit():
             if 0 < int(response) <= possibleCategories.count():
                 selectedCategory = possibleCategories[int(response) - 1]
                 break
-
         print("Enter a valid number!")
 
     ans['category'] = selectedCategory.kijijiId
@@ -69,16 +66,13 @@ def pickCategory():
         # make sure the input is a number and a valid index
         while True:
             response = input("Choose most relevant category relating to " + attribute.kijijiName + " [To restart, enter 0] : ")
-
             if response == "0":
                 print()  # empty line
                 return None  # this will restart pickCategory
-
             if response.isdigit():
                 if 0 < int(response) <= possibleCategories.count():
                     ans[attribute.kijijiName] = attribute.acceptableValue[int(response) - 1].kijijiValue
                     break
-
             print("Enter a valid number!")
 
     return ans
