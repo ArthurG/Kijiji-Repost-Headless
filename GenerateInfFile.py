@@ -33,6 +33,27 @@ def getEnum(array):
     response = int(input("Choose one: "))
     return array[response-1]
 
+def restart_function(func):
+    while True:  # user is able to restart the category picker if anithing goes wrong
+        print("go", func)
+        result = func
+        if result != None:
+            break
+        else:
+            continue
+    return result
+
+def div_decorate(func):
+    def func_wrapper():
+        while True:
+            result = func()
+            if result != None:
+                return result
+            else:
+                continue
+
+    return func_wrapper
+
 #{'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
 def pickCategory():
     ans = {}
@@ -95,13 +116,9 @@ print("****************************************************************\n")
 
 print("Your ad must be submitted in a specific category.")
 
-while True:  # user is able to restart the category picker if anithing goes wrong
-    categoryMap = pickCategory()
-    if categoryMap != None:
-        break
-    else:
-        continue
-
+categoryMap = div_decorate(pickCategory())
+print("!!!!!!!!!!", categoryMap)
+input("YO")
 addressMap = getAddressMap()
 locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
 title = input("Ad title: ")
