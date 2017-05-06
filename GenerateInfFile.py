@@ -93,11 +93,15 @@ def pickCategory():
 # Multiline ad description
 def getDescription():
     contents = []
-    print("Enter multiline ad description. Type 'EOF' on a new line to finish.")
+    print("Enter multiline ad description.")
+    print("Type 'DEL' on a new line to delete last line. Type 'EOF' on a new line to finish.")
     while True:
         line = input()
         if line.upper() == "EOF":
             break
+        elif line.upper() == "DEL":
+            print('"' + contents.pop() + '" was deleted. Enter next line.')
+            continue
         contents.append(line)
     return "\\n".join(contents)
 
