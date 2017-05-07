@@ -101,7 +101,7 @@ def getDescription():
             break
         elif line.upper() == "DEL":
             if contents:
-                print('"' + contents.pop() + '" was deleted. Enter next line.')
+                print('"{}" was deleted. Enter next line.'.format(contents.pop()))
             else:
                 print("This is the last line.")
             continue
@@ -110,6 +110,7 @@ def getDescription():
 
 
 if __name__ == '__main__':
+    
     print("****************************************************************")
     print("* Creating the myAd.inf file. Please answer all the questions. *")
     print("****************************************************************\n")
@@ -130,27 +131,27 @@ if __name__ == '__main__':
     photos = input("List of image filenames to upload (comma separated): ")
 
     f = open('myAd.inf', 'w')
-    f.write("postAdForm.geocodeLat="+addressMap['lat']+"\n")
-    f.write("postAdForm.geocodeLng="+addressMap['lng']+"\n")
-    f.write("postAdForm.city="+addressMap['city']+"\n")
-    f.write("postAdForm.province="+addressMap['province']+"\n")
-    f.write("PostalLat="+addressMap['lat']+"\n")
-    f.write("PostalLng="+addressMap['lng']+"\n")
-    f.write("categoryId="+categoryMap['category']+"\n")
-    f.write("postAdForm.adType="+ad+"\n")
-    f.write("postAdForm.priceType="+pmtType+"\n")
+    f.write("postAdForm.geocodeLat={}\n".format(addressMap['lat']))
+    f.write("postAdForm.geocodeLng={}\n".format(addressMap['lng']))
+    f.write("postAdForm.city={}\n".format(addressMap['city']))
+    f.write("postAdForm.province={}\n".format(addressMap['province']))
+    f.write("PostalLat={}\n".format(addressMap['lat']))
+    f.write("PostalLng={}\n".format(addressMap['lng']))
+    f.write("categoryId={}\n".format(categoryMap['category']))
+    f.write("postAdForm.adType={}\n".format(ad))
+    f.write("postAdForm.priceType={}\n".format(pmtType))
     if pmtType == 'FIXED':
-        f.write("postAdForm.priceAmount="+price+"\n")
-    [f.write("postAdForm.attributeMap["+attrKey+"]="+attrVal+"\n") for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
+        f.write("postAdForm.priceAmount={}\n".format(price))
+    [f.write("postAdForm.attributeMap[{}]={}\n".format(attrKey, attrVal)) for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
     f.write("postAdForm.attributeMap[forsaleby_s]=ownr"+"\n")
-    f.write("postAdForm.title="+title+"\n")
-    f.write("postAdForm.description="+description+"\n")
-    f.write("postAdForm.locationId="+locationId+"\n")
-    f.write("locationLevel0="+locationArea+"\n")
-    f.write("postAdForm.postalCode="+addressMap['postal_code']+"\n")
-    f.write("featuresForm.topAdDuration=7"+"\n")
-    f.write("submitType=saveAndCheckout"+"\n")
-    f.write("imageCsv="+photos+"\n")
+    f.write("postAdForm.title={}\n".format(title))
+    f.write("postAdForm.description={}\n".format(description))
+    f.write("postAdForm.locationId={}\n".format(locationId))
+    f.write("locationLevel0={}\n".format(locationArea))
+    f.write("postAdForm.postalCode={}\n".format(addressMap['postal_code']))
+    f.write("featuresForm.topAdDuration=7\n")
+    f.write("submitType=saveAndCheckout\n")
+    f.write("imageCsv={}\n".format(photos))
     f.close()
 
     print("myAd.inf file created. Use this file to post your ad.")
