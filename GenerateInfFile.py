@@ -93,56 +93,64 @@ def pickCategory():
 # Multiline ad description
 def getDescription():
     contents = []
-    print("Enter multiline ad description. Type 'EOF' on a new line to finish.")
+    print("Enter multiline ad description.")
+    print("Type 'DEL' on a new line to delete last line. Type 'EOF' on a new line to finish.")
     while True:
         line = input()
         if line.upper() == "EOF":
             break
+        elif line.upper() == "DEL":
+            if contents:
+                print('"' + contents.pop() + '" was deleted. Enter next line.')
+            else:
+                print("This is the last line.")
+            continue
         contents.append(line)
     return "\\n".join(contents)
 
 
-print("****************************************************************")
-print("* Creating the myAd.inf file. Please answer all the questions. *")
-print("****************************************************************\n")
+if __name__ == '__main__':
+    print("****************************************************************")
+    print("* Creating the myAd.inf file. Please answer all the questions. *")
+    print("****************************************************************\n")
 
-print("Your ad must be submitted in a specific category.")
+    print("Your ad must be submitted in a specific category.")
 
-categoryMap = restart_function(pickCategory)
-addressMap = getAddressMap()
-locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
-title = input("Ad title: ")
-description = getDescription()
-print("Ad price type:")
-pmtType = getEnum(priceType)
-if pmtType == 'FIXED':
-    price = input("Ad price in dollars: ")
-print("Ad type:")
-ad = getEnum(adType)
-photos = input("List of image filenames to upload (comma separated): ")
+    categoryMap = restart_function(pickCategory)
+    addressMap = getAddressMap()
+    locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
+    title = input("Ad title: ")
+    description = getDescription()
+    print("Ad price type:")
+    pmtType = getEnum(priceType)
+    if pmtType == 'FIXED':
+        price = input("Ad price in dollars: ")
+    print("Ad type:")
+    ad = getEnum(adType)
+    photos = input("List of image filenames to upload (comma separated): ")
 
-f = open('myAd.inf', 'w')
-f.write("postAdForm.geocodeLat="+addressMap['lat']+"\n")
-f.write("postAdForm.geocodeLng="+addressMap['lng']+"\n")
-f.write("postAdForm.city="+addressMap['city']+"\n")
-f.write("postAdForm.province="+addressMap['province']+"\n")
-f.write("PostalLat="+addressMap['lat']+"\n")
-f.write("PostalLng="+addressMap['lng']+"\n")
-f.write("categoryId="+categoryMap['category']+"\n")
-f.write("postAdForm.adType="+ad+"\n")
-f.write("postAdForm.priceType="+pmtType+"\n")
-if pmtType == 'FIXED':
-    f.write("postAdForm.priceAmount="+price+"\n")
-[f.write("postAdForm.attributeMap["+attrKey+"]="+attrVal+"\n") for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
-f.write("postAdForm.attributeMap[forsaleby_s]=ownr"+"\n")
-f.write("postAdForm.title="+title+"\n")
-f.write("postAdForm.description="+description+"\n")
-f.write("postAdForm.locationId="+locationId+"\n")
-f.write("locationLevel0="+locationArea+"\n")
-f.write("postAdForm.postalCode="+addressMap['postal_code']+"\n")
-f.write("featuresForm.topAdDuration=7"+"\n")
-f.write("submitType=saveAndCheckout"+"\n")
-f.write("imageCsv="+photos+"\n")
-f.close()
+    f = open('myAd.inf', 'w')
+    f.write("postAdForm.geocodeLat="+addressMap['lat']+"\n")
+    f.write("postAdForm.geocodeLng="+addressMap['lng']+"\n")
+    f.write("postAdForm.city="+addressMap['city']+"\n")
+    f.write("postAdForm.province="+addressMap['province']+"\n")
+    f.write("PostalLat="+addressMap['lat']+"\n")
+    f.write("PostalLng="+addressMap['lng']+"\n")
+    f.write("categoryId="+categoryMap['category']+"\n")
+    f.write("postAdForm.adType="+ad+"\n")
+    f.write("postAdForm.priceType="+pmtType+"\n")
+    if pmtType == 'FIXED':
+        f.write("postAdForm.priceAmount="+price+"\n")
+    [f.write("postAdForm.attributeMap["+attrKey+"]="+attrVal+"\n") for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
+    f.write("postAdForm.attributeMap[forsaleby_s]=ownr"+"\n")
+    f.write("postAdForm.title="+title+"\n")
+    f.write("postAdForm.description="+description+"\n")
+    f.write("postAdForm.locationId="+locationId+"\n")
+    f.write("locationLevel0="+locationArea+"\n")
+    f.write("postAdForm.postalCode="+addressMap['postal_code']+"\n")
+    f.write("featuresForm.topAdDuration=7"+"\n")
+    f.write("submitType=saveAndCheckout"+"\n")
+    f.write("imageCsv="+photos+"\n")
+    f.close()
 
-print("myAd.inf file created. Use this file to post your ad.")
+    print("myAd.inf file created. Use this file to post your ad.")
