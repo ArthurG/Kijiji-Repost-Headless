@@ -139,6 +139,8 @@ class KijijiApi:
         #Upload the ad itself
         newAdUrl="https://www.kijiji.ca/p-submit-ad.html"
         resp = self.session.post(newAdUrl, data=data)
+        if not len(data.get("postAdForm.title", "")) >= 10:
+            raise AssertionError("Your title is too short!")
         if (resp.status_code != 200 or \
                 "message-container success" not in resp.text):
             raise PostAdException(resp.text)
