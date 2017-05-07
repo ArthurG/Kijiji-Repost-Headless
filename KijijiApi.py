@@ -33,8 +33,11 @@ class DeleteAdException(KijijiApiException):
 #Tokens are different every time a page is visitied. 
 def getToken(html, tokenName):
     soup = bs4.BeautifulSoup(html, 'html.parser')
-    res = soup.select('[name='+tokenName+']')[0]
-    return res['value']
+    res = soup.select("[name={}]".format(tokenName))
+    if not res:
+        print("Token '{}' not found in html text.".format(tokenName))
+        return ""
+    return res[0]['value']
 
 def uploadOneImage(imgFile):
     #Try three times to upload the file. If successful, return the url.
