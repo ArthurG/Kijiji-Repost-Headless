@@ -19,7 +19,7 @@ def getCategoryMap(session, branchCategories, isInitialRun):
         for categoryNode in categorySoup.select('[id^=CategoryId]'):
             categoryName = categoryNode.get_text().strip("\n").strip()
             categoryId = categoryNode['data-cat-id'] 
-            if (categoryNode['data-cat-leaf']=='false'):
+            if (categoryNode['data-cat-leaf'] == 'false'):
                 newBranches[categoryId] = categoryName
             else:
                 leafCategory[categoryId] = categoryName
@@ -34,7 +34,7 @@ def getCategoryMap(session, branchCategories, isInitialRun):
             for categoryNode in categorySoup.select('[class=category-link]'):
                 categoryName = name + " > " + categoryNode.get_text().strip("\n").strip()
                 categoryId = categoryNode['data-cat-id'] 
-                if (categoryNode['data-cat-leaf']=='false'):
+                if (categoryNode['data-cat-leaf'] == 'false'):
                     newBranches[categoryId] = categoryName
                 else:
                     leafCategory[categoryId] = categoryName
@@ -71,39 +71,34 @@ for category in session.query(PostingCategory):
 
 ##Get all the categories from Kijiji and put them into database
 session = requests.session()
-#Login to Kijiji
-url = 'http://www.kijiji.ca/h-kitchener-waterloo/1700212'
-resp = session.get(url)
-
 url = 'https://www.kijiji.ca/t-login.html'
 resp = session.get(url)
-
-payload = {'emailOrNickname': username,
-            'password': password,
-            'rememberMe': 'true',
-            '_rememberMe': 'on',
-            'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
-            'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
-            }
-resp = session.post(url, data = payload)
+payload = {
+    'emailOrNickname': username,
+    'password': password,
+    'rememberMe': 'true',
+    '_rememberMe': 'on',
+    'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
+    'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
+    }
+session.post(url, data=payload)
 
 #Look at what attributes are there
 categories = getCategoryMap(session, [], True)
 for key, value in categories.items():
     print("Currently saving ", value)
-    category1=PostingCategory(kijijiId=key, name=value)
-    postingUrl="https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId="+key
+    category1 = PostingCategory(kijijiId=key, name=value)
+    postingUrl = "https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId="+key
     newAdPage = session.get(postingUrl)
     newAdPageSoup = bs4.BeautifulSoup(newAdPage.text, 'html.parser')
     attributes = newAdPageSoup.select("select[name^=postAdForm.attributeMap]")
     for attribute in attributes:
-        attribute1 = ItemAttribute(name="", kijijiName= attribute["id"])
+        attribute1 = ItemAttribute(name="", kijijiName=attribute["id"])
         for possibleValue in attribute.select("option"):
             if possibleValue["value"] == "":
                 continue
-            value1 = ItemAttributeValue(value=possibleValue.get_text(),kijijiValue=possibleValue["value"])
+            value1 = ItemAttributeValue(value=possibleValue.get_text(), kijijiValue=possibleValue["value"])
             attribute1.acceptableValue.append(value1)
         category1.attribute.append(attribute1)
-
     sqliteSession.add(category1)
 sqliteSession.commit()
