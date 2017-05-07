@@ -13,7 +13,6 @@
 
 ### Generating a .inf file for an ad
 - Generate a posting file (myAd.inf) with the command `python GenerateInfFile.py` and follow the prompts
-- Edit the "postAdForm.locationId" and "locationLevel0" fields in myAd.inf with correct values for your area and city. These values can be found by doing an inspect element on the location dropdown on the Kijiji homepage and finding the the correct li#groupXXXXXXX for your city.
 - Place all photo dependancies in the current directory
 
 ### Posting + Reposting an ad
