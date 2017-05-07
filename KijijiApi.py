@@ -3,6 +3,7 @@ import json
 import bs4
 import re
 import sys
+import time
 from multiprocessing import Pool
 
 if sys.version_info < (3, 0):
@@ -10,11 +11,16 @@ if sys.version_info < (3, 0):
 
 class KijijiApiException(Exception):
     def __init__(self, dump=None):
+        self.dumpfilepath = ""
         if dump:
-            with open('/tmp/kijiji-api-dump', 'w') as dumpfile:
-                dumpfile.write(dump)
+            self.dumpfilepath = "{}_dump_{}.txt".format(sys.argv[0], time.strftime("%Y%m%dT%H%M%S"))
+            with open(self.dumpfilepath, 'w') as f:
+                f.write(dump)
     def __str__(self):
-        return "View /tmp/kijiji-api-dump/ for last dumpfile"
+        if self.dumpfilepath:
+            return "See {} in current directory for latest dumpfile.".format(self.dumpfilepath)
+        else:
+            return ""
 
 class SignInException(KijijiApiException):
     def __str__(self):
