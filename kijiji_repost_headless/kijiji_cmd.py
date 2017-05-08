@@ -1,8 +1,9 @@
 import argparse
-import KijijiApi
-import sys
 import os
+import sys
 from time import sleep
+
+from kijiji_repost_headless.kijiji_api import *
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")

@@ -1,9 +1,11 @@
 #TODO: Actual error handling
 
-import requests
 import json
-from PostingCategory import *
-from GetIDs import get_location_and_area_ids
+
+import requests
+from kijiji_repost_headless.get_ids import get_location_and_area_ids
+from kijiji_repost_headless.posting_category import *
+
 adType = ['OFFER', 'WANTED']
 priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 

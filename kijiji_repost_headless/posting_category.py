@@ -1,14 +1,41 @@
 import sqlalchemy
-import requests
 import bs4
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, sessionmaker
 import sqlalchemy.ext.declarative
-from KijijiApi import getToken
-from PostingCategory import *
 
-engine = sqlalchemy.create_engine('sqlite:///kijijiApi.db')
+engine = sqlalchemy.create_engine('sqlite:///kijiji_api.db')
 Base = sqlalchemy.ext.declarative.declarative_base()
+
+class PostingCategory(Base):
+    __tablename__ = "postingCategory"
+    _id=Column(Integer(), primary_key=True)
+    kijijiId=Column(String())
+    name=Column(String())
+
+    def __repr__(self):
+        return "<PostingCategory(name='%s')>" % self.name
+
+class ItemAttribute(Base):
+    __tablename__ = "itemAttribute"
+    _id=Column(Integer(), primary_key=True)
+    kijijiName=Column(String())
+    name=Column(String())
+    related_categoryId = Column(Integer(), sqlalchemy.ForeignKey('postingCategory._id'))
+    relatedCategory = relationship("PostingCategory", back_populates="attribute")
+    def __repr__(self):
+        return "<ItemAttribute(name='%s') >" % self.name
+
+PostingCategory.attribute = relationship("ItemAttribute", back_populates="relatedCategory")
+
+class ItemAttributeValue(Base):
+    __tablename__ = "itemAttributeValue"
+    _id=Column(Integer, primary_key=True)
+    kijijiValue=Column(String)
+    value=Column(String())
+    related_attributeId=Column(Integer(), sqlalchemy.ForeignKey('itemAttribute._id'))
+    attributeFor = relationship('ItemAttribute', back_populates="acceptableValue")
+ItemAttribute.acceptableValue = relationship("ItemAttributeValue", back_populates="attributeFor")
 
 def getCategoryMap(session, branchCategories, isInitialRun):
     leafCategory = {}
@@ -69,41 +96,3 @@ for category in session.query(PostingCategory):
 """
 
 
-##Get all the categories from Kijiji and put them into database
-session = requests.session()
-#Login to Kijiji
-url = 'http://www.kijiji.ca/h-kitchener-waterloo/1700212'
-resp = session.get(url)
-
-url = 'https://www.kijiji.ca/t-login.html'
-resp = session.get(url)
-
-payload = {'emailOrNickname': username,
-            'password': password,
-            'rememberMe': 'true',
-            '_rememberMe': 'on',
-            'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
-            'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
-            }
-resp = session.post(url, data = payload)
-
-#Look at what attributes are there
-categories = getCategoryMap(session, [], True)
-for key, value in categories.items():
-    print("Currently saving ", value)
-    category1=PostingCategory(kijijiId=key, name=value)
-    postingUrl="https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId="+key
-    newAdPage = session.get(postingUrl)
-    newAdPageSoup = bs4.BeautifulSoup(newAdPage.text, 'html.parser')
-    attributes = newAdPageSoup.select("select[name^=postAdForm.attributeMap]")
-    for attribute in attributes:
-        attribute1 = ItemAttribute(name="", kijijiName= attribute["id"])
-        for possibleValue in attribute.select("option"):
-            if possibleValue["value"] == "":
-                continue
-            value1 = ItemAttributeValue(value=possibleValue.get_text(),kijijiValue=possibleValue["value"])
-            attribute1.acceptableValue.append(value1)
-        category1.attribute.append(attribute1)
-
-    sqliteSession.add(category1)
-sqliteSession.commit()

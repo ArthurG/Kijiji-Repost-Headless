@@ -1,6 +1,7 @@
 import unittest
+
 import mock
-from GenerateInfFile import getDescription
+from kijiji_repost_headless.generate_inf_file import getDescription
 
 
 class TestsGenerateInfFile(unittest.TestCase):
