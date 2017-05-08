@@ -26,29 +26,29 @@ def main():
    
    postParser = subparsers.add_parser('post', help='post a new ad')
    postParser.add_argument('inf_file', type=str, help='.inf file containing posting details')
-   postParser.set_defaults(function=postAd)
+   postParser.set_defaults(function=post_ad)
 
    folderParser = subparsers.add_parser('folder', help='post ad from folder')
    folderParser.add_argument('folderName', type=str, help='folder containing ad details')
-   folderParser.set_defaults(function=postFolder)
+   folderParser.set_defaults(function=post_folder)
 
-   repostFolderParser = subparsers.add_parser('repostFolder', help='post ad from folder')
+   repostFolderParser = subparsers.add_parser('repost_folder', help='post ad from folder')
    repostFolderParser.add_argument('folderName', type=str, help='folder containing ad details')
-   repostFolderParser.set_defaults(function=repostFolder)
+   repostFolderParser.set_defaults(function=repost_folder)
    
    showParser = subparsers.add_parser('show', help='show currently listed ads')
-   showParser.set_defaults(function=showAds)
+   showParser.set_defaults(function=show_ads)
 
    deleteParser = subparsers.add_parser('delete', help='delete a listed ad')
    deleteParser.add_argument('id',type=str, help='id of the ad you wish to delete')
-   deleteParser.set_defaults(function=deleteAd)
+   deleteParser.set_defaults(function=delete_ad)
 
    nukeParser = subparsers.add_parser('nuke', help='delete all ads')
    nukeParser.set_defaults(function=nuke)
 
    repostParser = subparsers.add_parser('repost', help='repost an existing ad')
    repostParser.add_argument('inf_file', type = str,help = '.inf file containing posting details')
-   repostParser.set_defaults(function=repostAd)
+   repostParser.set_defaults(function=repost_ad)
 
    args = parser.parse_args()
    #try:
@@ -58,7 +58,7 @@ def main():
     #   parser.print_help()
 
 #HELPER FUNCTIONS
-def getFolderData(args):
+def get_folder_data(args):
     args.inf_file = "item.inf"
     cred_file = args.folderName+"/login.inf"
     f = open(cred_file, 'r')
@@ -66,7 +66,7 @@ def getFolderData(args):
     args.username = creds[0] 
     args.password = creds[1] 
 
-def getInfDetails(inf_file):
+def get_inf_details(inf_file):
     data = {}
     infFileLines = open(inf_file, 'rt')
     data={}
@@ -83,34 +83,34 @@ def getInfDetails(inf_file):
     return [data, files]
 
 ##Actual Functions called from main
-def postFolder(args):
-    getFolderData(args)
+def post_folder(args):
+    get_folder_data(args)
     os.chdir(args.folderName)
-    postAd(args)
+    post_ad(args)
 
-def postAd(args):
-    [data, imageFiles] = getInfDetails(args.inf_file)
+def post_ad(args):
+    [data, imageFiles] = get_inf_details(args.inf_file)
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    api.postAdUsingData(data, imageFiles)
+    api.post_ad_using_data(data, imageFiles)
 
-def showAds(args):
+def show_ads(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    [print("{} '{}'".format(adId, adName)) for adName, adId in api.getAllAds()]
+    [print("{} '{}'".format(adId, adName)) for adName, adId in api.get_all_ads()]
 
-def deleteAd(args):
+def delete_ad(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    api.deleteAd(args.id)
+    api.delete_ad(args.id)
 
-def deleteAdUsingTitle(name):
+def delete_ad_using_title(name):
     api = KijijiApi.KijijiApi()
     api.deleteAdUsingTitle(name)
 
 #Try to delete ad with same name if possible
 #post new ad
-def repostAd(args):
+def repost_ad(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
     delAdName = ""
@@ -126,18 +126,18 @@ def repostAd(args):
         pass
     # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
     sleep(180)
-    postAd(args)
+    post_ad(args)
 
-def repostFolder(args):
-    getFolderData(args)
+def repost_folder(args):
+    get_folder_data(args)
     os.chdir(args.folderName)
-    repostAd(args)
+    repost_ad(args)
 
 def nuke(args):
     api = KijijiApi.KijijiApi()
     api.login(args.username, args.password)
-    allAds = api.getAllAds()
-    [api.deleteAd(adId) for adName, adId in allAds]
+    allAds = api.get_all_ads()
+    [api.delete_ad(adId) for adName, adId in allAds]
 
 if __name__ == "__main__":
 

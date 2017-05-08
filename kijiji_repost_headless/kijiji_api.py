@@ -31,12 +31,12 @@ class DeleteAdException(KijijiApiException):
 
 #Retrive CSRF token from webpage
 #Tokens are different every time a page is visitied. 
-def getToken(html, tokenName):
+def get_token(html, tokenName):
     soup = bs4.BeautifulSoup(html, 'html.parser')
     res = soup.select('[name='+tokenName+']')[0]
     return res['value']
 
-def uploadOneImage(imgFile):
+def upload_one_image(imgFile):
     #Try three times to upload the file. If successful, return the url.
     imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
     for i in range(0, 3):
@@ -59,13 +59,13 @@ def uploadOneImage(imgFile):
 
 class KijijiApi:
     #login:  user, password -> None (Sets session to logged in)
-    #isLoggedIn: None -> bool
+    #is_logged_in: None -> bool
     #All function requires a logged in session to function correctly
     #logout: None -> None
-    #postAd: PostingFile -> adId
-    #deleteAd: adId -> None
-    #deleteAdUsingTitle: adTitle -> None
-    #getAllAds: None -> list(vector(adname, adId))
+    #post_ad: PostingFile -> adId
+    #delete_ad: adId -> None
+    #delete_ad_using_title: adTitle -> None
+    #get_all_ads: None -> list(vector(adname, adId))
 
     def __init__(self):
         config = {}
@@ -80,21 +80,21 @@ class KijijiApi:
                 'password': password,
                 'rememberMe': 'true',
                 '_rememberMe': 'on',
-                'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
+                'ca.kijiji.xsrf.token': get_token(resp.text, 'ca.kijiji.xsrf.token'),
                 'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
                 }
         resp = self.session.post(loginUrl, data = payload)
-        if not self.isLoggedIn():
+        if not self.is_logged_in():
             raise SignInException(resp.text)
 
-    def isLoggedIn(self):
+    def is_logged_in(self):
         indexPageText = self.session.get('https://www.kijiji.ca/m-my-ads.html/').text
         return 'Sign Out' in indexPageText 
 
     def logout(self):
         self.session.get('https://www.kijiji.ca/m-logout.html')
 
-    def deleteAd(self, adId):
+    def delete_ad(self, adId):
         myAdsPage = self.session.get('https://www.kijiji.ca/m-my-ads.html')
 
         params = {
@@ -102,37 +102,37 @@ class KijijiApi:
                 'Mode': 'ACTIVE',
                 'needsRedirect': 'false',
                 'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(adId),
-                'ca.kijiji.xsrf.token': getToken(myAdsPage.text, 'ca.kijiji.xsrf.token')
+                'ca.kijiji.xsrf.token': get_token(myAdsPage.text, 'ca.kijiji.xsrf.token')
                 }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data = params)
         if ("OK" not in resp.text):
             raise DeleteAdException(resp.text)
 
     def deleteAdUsingTitle(self, title):
-        allAds = self.getAllAds()
-        [self.deleteAd(i) for t, i in allAds if t.strip() == title.strip()]
+        allAds = self.get_all_ads()
+        [self.delete_ad(i) for t, i in allAds if t.strip() == title.strip()]
         
     #Allow user to pass in photos (as a array of string) they want to upload
     #Upload images concurrently using Pool
-    def uploadImage(self, imageFiles=[]):
+    def upload_image(self, imageFiles=[]):
         images = []
         with Pool(5) as p:
-            images = p.map(uploadOneImage, imageFiles)
+            images = p.map(upload_one_image, imageFiles)
         return [image for image in images if image is not None]
     
     #Data is a Dictionary that represents the data that will be posted to Kijijiserver
     #imageFiles represents a bunch of opened files (in string format) that need to be uploaded 
-    def postAdUsingData(self, data, imageFiles=[]):
+    def post_ad_using_data(self, data, imageFiles=[]):
         #Upload the images
-        imageList = self.uploadImage(imageFiles)
+        imageList = self.upload_image(imageFiles)
         data['images'] = ",".join(imageList)
         
         #Load ad posting page
         resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=773')
         
         #Retrive tokens for website
-        xsrfToken = getToken(resp.text, 'ca.kijiji.xsrf.token') 
-        fraudToken = getToken(resp.text, 'postAdForm.fraudToken')
+        xsrfToken = get_token(resp.text, 'ca.kijiji.xsrf.token')
+        fraudToken = get_token(resp.text, 'postAdForm.fraudToken')
         data['ca.kijiji.xsrf.token']=xsrfToken
         data['postAdForm.fraudToken']=fraudToken
 
@@ -148,7 +148,7 @@ class KijijiApi:
         adId = re.search('\d+', newCookieWithAdId).group()
         return adId
 
-    def getAllAds(self):
+    def get_all_ads(self):
         myAdsUrl = 'http://www.kijiji.ca/j-get-my-ads.json'
         myAdsPage = self.session.get(myAdsUrl)
         myAdsTree = json.loads(myAdsPage.text) 

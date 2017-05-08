@@ -1,14 +1,14 @@
 import bs4
 import requests
 import sqlalchemy.ext.declarative
-from kijiji_repost_headless.kijiji_api import getToken
+from kijiji_repost_headless.kijiji_api import get_token
 from kijiji_repost_headless.posting_category import *
 from sqlalchemy.orm import sessionmaker
 
 engine = sqlalchemy.create_engine('sqlite:///kijiji_api.db')
 Base = sqlalchemy.ext.declarative.declarative_base()
 
-def getCategoryMap(session, branchCategories, isInitialRun):
+def get_category_map(session, branchCategories, isInitialRun):
     leafCategory = {}
     newBranches = {}
     if isInitialRun:
@@ -36,7 +36,7 @@ def getCategoryMap(session, branchCategories, isInitialRun):
                     newBranches[categoryId] = categoryName
                 else:
                     leafCategory[categoryId] = categoryName
-    return {**leafCategory, **(getCategoryMap(session, newBranches, False))}
+    return {**leafCategory, **(get_category_map(session, newBranches, False))}
 
 ##INITIALIZE THE SQLALCHEMY 
 Session = sessionmaker(bind=engine)
@@ -80,13 +80,13 @@ payload = {'emailOrNickname': username,
             'password': password,
             'rememberMe': 'true',
             '_rememberMe': 'on',
-            'ca.kijiji.xsrf.token': getToken(resp.text, 'ca.kijiji.xsrf.token'),
+            'ca.kijiji.xsrf.token': get_token(resp.text, 'ca.kijiji.xsrf.token'),
             'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
             }
 resp = session.post(url, data = payload)
 
 #Look at what attributes are there
-categories = getCategoryMap(session, [], True)
+categories = get_category_map(session, [], True)
 for key, value in categories.items():
     print("Currently saving ", value)
     category1=PostingCategory(kijijiId=key, name=value)

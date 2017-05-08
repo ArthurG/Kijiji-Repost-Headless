@@ -11,7 +11,7 @@ priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 
 
 #Dictionary w/ postal_code, lat, lng, city, province
-def getAddressMap():
+def get_address_map():
     address = input("Your address: ")
     data = {'address': address}
     endpoint = 'https://maps.googleapis.com/maps/api/geocode/json'
@@ -29,7 +29,7 @@ def getAddressMap():
     ans['province'] = province
     return ans
 
-def getEnum(array):
+def get_enum(array):
     for i, item in enumerate(array):
         print("{:>2d} - {}".format(i+1, item))
     response = int(input("Choose one: "))
@@ -49,7 +49,7 @@ def restart_function(func):
     return returned_value
 
 #{'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
-def pickCategory():
+def pick_category():
     ans = {}
     while True:
         keyword = input("Please provide a category keyword to search for: ")
@@ -66,7 +66,7 @@ def pickCategory():
         response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
         if response == "0":
             print()  # empty line
-            return None  # this will restart pickCategory
+            return None  # this will restart pick_category
         if response.isdigit():
             if 0 < int(response) <= possibleCategories.count():
                 selectedCategory = possibleCategories[int(response) - 1]
@@ -83,7 +83,7 @@ def pickCategory():
             response = input("Choose most relevant category relating to " + attribute.kijijiName + " [To restart, enter 0] : ")
             if response == "0":
                 print()  # empty line
-                return None  # this will restart pickCategory
+                return None  # this will restart pick_category
             if response.isdigit():
                 if 0 < int(response) <= len(attribute.acceptableValue):
                     ans[attribute.kijijiName] = attribute.acceptableValue[int(response) - 1].kijijiValue
@@ -93,7 +93,7 @@ def pickCategory():
     return ans
 
 # Multiline ad description
-def getDescription():
+def get_description():
     contents = []
     print("Enter multiline ad description.")
     print("Type 'DEL' on a new line to delete last line. Type 'EOF' on a new line to finish.")
@@ -119,17 +119,17 @@ if __name__ == '__main__':
 
     print("Your ad must be submitted in a specific category.")
 
-    categoryMap = restart_function(pickCategory)
-    addressMap = getAddressMap()
+    categoryMap = restart_function(pick_category)
+    addressMap = get_address_map()
     locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
     title = input("Ad title: ")
-    description = getDescription()
+    description = get_description()
     print("Ad price type:")
-    pmtType = getEnum(priceType)
+    pmtType = get_enum(priceType)
     if pmtType == 'FIXED':
         price = input("Ad price in dollars: ")
     print("Ad type:")
-    ad = getEnum(adType)
+    ad = get_enum(adType)
     photos = input("List of image filenames to upload (comma separated): ")
 
     f = open('myAd.inf', 'w')
