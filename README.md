@@ -18,19 +18,19 @@
 ### Posting + Reposting an ad
 To post myAd.inf:
 
-`python kijiji_cmd.py -u (username) -p (password) post myAd.inf`
+`python KijijiCmd.py -u (username) -p (password) post myAd.inf`
 
 To repost myAd.inf (will delete the ad if it is already posted prior to posting):
 
-`python kijiji_cmd.py -u (username) -p (password) repost myAd.inf`
+`python KijijiCmd.py -u (username) -p (password) repost myAd.inf`
 
 To delete all ads:
 
-`python kijiji_cmd.py -u (username) -p (password) nuke`
+`python KijijiCmd.py -u (username) -p (password) nuke`
 
 To delete one ad:
 
-`python kijiji_cmd.py -u (username) -p (password) delete (adId)`
+`python KijijiCmd.py -u (username) -p (password) delete (adId)`
 
 Alternatively, there are also interfaces for posting/reposting an ad from a folder, which is especially useful if you're too lazy to enter your username/password every time or you have multiple Kijiji accounts.
 
@@ -38,17 +38,17 @@ Inside your folder, include ALL photos, an `item.inf` ad file, and a `login.inf`
 
 To post from folder:
 
-`python kijiji_cmd.py folder (folderName)`
+`python KijijiCmd.py folder (folderName)`
 
 To repost from folder:
 
-`python kijiji_cmd.py repost_folder (folderName)`
+`python KijijiCmd.py repostFolder (folderName)`
 
 ## Issues
 Please open a GitHub issue or pull request if you discover problems.
 
 ## TODO
 - Error handling -> automatically send bugs + logs to developer
-- Modify generate_inf_file to be more user friendly
+- Modify GenerateInfFile to be more user friendly
 - Organize files like a standard module
 - Do some magic to avoid reuploading the same pictures again and again
