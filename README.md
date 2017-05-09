@@ -12,7 +12,7 @@
 ## Usage
 
 ### Generating a .inf file for an ad
-- Generate a posting file (myAd.inf) with the command `python GenerateInfFile.py` and follow the prompts
+- Generate a posting file (myAd.inf) with the command `python generate_inf_file.py` and follow the prompts
 - Place all photo dependancies in the current directory
 
 ### Posting + Reposting an ad
