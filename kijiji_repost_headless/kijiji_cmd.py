@@ -3,7 +3,7 @@ import os
 import sys
 from time import sleep
 
-from kijiji_api import *
+import kijiji_api
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -90,28 +90,28 @@ def post_folder(args):
 
 def post_ad(args):
     [data, imageFiles] = get_inf_details(args.inf_file)
-    api = KijijiApi.KijijiApi()
+    api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     api.post_ad_using_data(data, imageFiles)
 
 def show_ads(args):
-    api = KijijiApi.KijijiApi()
+    api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     [print("{} '{}'".format(adId, adName)) for adName, adId in api.get_all_ads()]
 
 def delete_ad(args):
-    api = KijijiApi.KijijiApi()
+    api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     api.delete_ad(args.id)
 
 def delete_ad_using_title(name):
-    api = KijijiApi.KijijiApi()
+    api = kijiji_api.KijijiApi()
     api.deleteAdUsingTitle(name)
 
 #Try to delete ad with same name if possible
 #post new ad
 def repost_ad(args):
-    api = KijijiApi.KijijiApi()
+    api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     delAdName = ""
     for line in open(args.inf_file, 'rt'):
@@ -121,7 +121,7 @@ def repost_ad(args):
     try:
         api.deleteAdUsingTitle(delAdName)
         print("Existing ad deleted before reposting")
-    except DeleteAdException:
+    except kijiji_api.DeleteAdException:
         print("Did not find an existing ad with matching title, skipping ad deletion")
         pass
     # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
@@ -134,7 +134,7 @@ def repost_folder(args):
     repost_ad(args)
 
 def nuke(args):
-    api = KijijiApi.KijijiApi()
+    api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     allAds = api.get_all_ads()
     [api.delete_ad(adId) for adName, adId in allAds]
