@@ -1,8 +1,8 @@
 import bs4
 import requests
 import sqlalchemy.ext.declarative
-from kijiji_repost_headless.kijiji_api import get_token
-from kijiji_repost_headless.posting_category import *
+from kijiji_api import get_token
+from posting_category import *
 from sqlalchemy.orm import sessionmaker
 
 engine = sqlalchemy.create_engine('sqlite:///kijiji_api.db')
