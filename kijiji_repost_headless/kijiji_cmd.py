@@ -106,7 +106,7 @@ def delete_ad(args):
 
 def delete_ad_using_title(name):
     api = kijiji_api.KijijiApi()
-    api.deleteAdUsingTitle(name)
+    api.delete_ad_using_title(name)
 
 #Try to delete ad with same name if possible
 #post new ad
@@ -119,7 +119,7 @@ def repost_ad(args):
         if key =='postAdForm.title':
             delAdName = val
     try:
-        api.deleteAdUsingTitle(delAdName)
+        api.delete_ad_using_title(delAdName)
         print("Existing ad deleted before reposting")
     except kijiji_api.DeleteAdException:
         print("Did not find an existing ad with matching title, skipping ad deletion")

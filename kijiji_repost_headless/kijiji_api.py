@@ -108,7 +108,7 @@ class KijijiApi:
         if ("OK" not in resp.text):
             raise DeleteAdException(resp.text)
 
-    def deleteAdUsingTitle(self, title):
+    def delete_ad_using_title(self, title):
         allAds = self.get_all_ads()
         [self.delete_ad(i) for t, i in allAds if t.strip() == title.strip()]
         
