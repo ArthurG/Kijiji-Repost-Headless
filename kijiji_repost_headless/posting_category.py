@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship, sessionmaker
 import sqlalchemy.ext.declarative
 
-engine = sqlalchemy.create_engine('sqlite:///kijijiApi.db')
+engine = sqlalchemy.create_engine('sqlite:///kijiji_api.db')
 Base = sqlalchemy.ext.declarative.declarative_base()
 
 class PostingCategory(Base):
@@ -37,7 +37,7 @@ class ItemAttributeValue(Base):
     attributeFor = relationship('ItemAttribute', back_populates="acceptableValue")
 ItemAttribute.acceptableValue = relationship("ItemAttributeValue", back_populates="attributeFor")
 
-def getCategoryMap(session, branchCategories, isInitialRun):
+def get_category_map(session, branchCategories, isInitialRun):
     leafCategory = {}
     newBranches = {}
     if isInitialRun:
@@ -65,7 +65,7 @@ def getCategoryMap(session, branchCategories, isInitialRun):
                     newBranches[categoryId] = categoryName
                 else:
                     leafCategory[categoryId] = categoryName
-    return {**leafCategory, **(getCategoryMap(session, newBranches, False))}
+    return {**leafCategory, **(get_category_map(session, newBranches, False))}
 
 ##INITIALIZE THE SQLALCHEMY 
 Session = sessionmaker(bind=engine)
