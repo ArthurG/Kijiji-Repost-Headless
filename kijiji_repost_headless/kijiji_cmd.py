@@ -67,19 +67,9 @@ def get_folder_data(args):
     args.password = creds[1] 
 
 def get_inf_details(inf_file):
-    data = {}
-    infFileLines = open(inf_file, 'rt')
-    data={}
-    for line in infFileLines:
-        [key, val] = line.lstrip().rstrip("\n").split("=")
-        data[key] = val
-    infFileLines.close()
-    
-    ##open picture files
-    files=[]
-    for picture in data['imageCsv'].split(","):
-        f = open(picture, 'rb').read()
-        files.append(f)
+    with open(inf_file, 'rt') as infFileLines:
+        data = {key: val for line in infFileLines for (key, val) in (line.strip().split("="),)}
+    files = [open(picture, 'rb').read() for picture in data['imageCsv'].split(",")]
     return [data, files]
 
 ##Actual Functions called from main
@@ -106,7 +96,7 @@ def delete_ad(args):
 
 def delete_ad_using_title(name):
     api = kijiji_api.KijijiApi()
-    api.deleteAdUsingTitle(name)
+    api.delete_ad_using_title(name)
 
 #Try to delete ad with same name if possible
 #post new ad
@@ -119,7 +109,7 @@ def repost_ad(args):
         if key =='postAdForm.title':
             delAdName = val
     try:
-        api.deleteAdUsingTitle(delAdName)
+        api.delete_ad_using_title(delAdName)
         print("Existing ad deleted before reposting")
     except kijiji_api.DeleteAdException:
         print("Did not find an existing ad with matching title, skipping ad deletion")
