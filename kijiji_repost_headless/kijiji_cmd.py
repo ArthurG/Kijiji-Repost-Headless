@@ -67,19 +67,9 @@ def get_folder_data(args):
     args.password = creds[1] 
 
 def get_inf_details(inf_file):
-    data = {}
-    infFileLines = open(inf_file, 'rt')
-    data={}
-    for line in infFileLines:
-        [key, val] = line.lstrip().rstrip("\n").split("=")
-        data[key] = val
-    infFileLines.close()
-    
-    ##open picture files
-    files=[]
-    for picture in data['imageCsv'].split(","):
-        f = open(picture, 'rb').read()
-        files.append(f)
+    with open(inf_file, 'rt') as infFileLines:
+        data = {key: val for line in infFileLines for (key, val) in (line.strip().split("="),)}
+    files = [open(picture, 'rb').read() for picture in data['imageCsv'].split(",")]
     return [data, files]
 
 ##Actual Functions called from main
