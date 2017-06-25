@@ -44,11 +44,10 @@ def main():
     repostParser.set_defaults(function=repost_ad)
 
     args = parser.parse_args()
-    #try:
-    args.function(args)
-    #except AttributeError as err:
-    #    print(err)
-    #    parser.print_help()
+    try:
+        args.function(args)
+    except AttributeError:
+        parser.print_help()
 
 
 def get_folder_data(args):
@@ -57,8 +56,7 @@ def get_folder_data(args):
     """
     args.inf_file = "item.inf"
     cred_file = args.folderName+"/login.inf"
-    f = open(cred_file, 'r')
-    creds = [line.strip() for line in f]
+    creds = [line.strip() for line in open(cred_file, 'r')]
     args.username = creds[0]
     args.password = creds[1]
 

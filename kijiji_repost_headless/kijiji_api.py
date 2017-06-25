@@ -3,8 +3,8 @@ import json
 import bs4
 import re
 import sys
-import time
 from multiprocessing import Pool
+from time import strftime
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -17,7 +17,7 @@ class KijijiApiException(Exception):
     def __init__(self, dump=None):
         self.dumpfilepath = ""
         if dump:
-            self.dumpfilepath = "kijiji_dump_{}.txt".format(time.strftime("%Y%m%dT%H%M%S"))
+            self.dumpfilepath = "kijiji_dump_{}.txt".format(strftime("%Y%m%dT%H%M%S"))
             with open(self.dumpfilepath, 'a') as f:
                 f.write(dump)
     def __str__(self):
