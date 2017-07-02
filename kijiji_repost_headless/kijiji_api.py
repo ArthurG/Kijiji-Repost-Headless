@@ -151,7 +151,9 @@ class KijijiApi:
         return adId
 
     def get_all_ads(self):
-        myAdsUrl = 'http://www.kijiji.ca/j-get-my-ads.json'
+        resp = self.session.get('https://www.kijiji.ca/m-my-ads.html')
+        userId=get_token(resp.text, 'userId')
+        myAdsUrl = 'https://www.kijiji.ca/j-get-my-ads.json?_=1&currentOffset=0&isPromoting=false&show=ACTIVE&user={}'.format(userId)
         myAdsPage = self.session.get(myAdsUrl)
         myAdsTree = json.loads(myAdsPage.text) 
         adIds = [entry['id'] for entry in myAdsTree['myAdEntries']]
