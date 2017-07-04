@@ -13,8 +13,8 @@ class KijijiApiException(Exception):
     def __init__(self, dump=None):
         self.dumpfilepath = ""
         if dump:
-            self.dumpfilepath = "{}_dump_{}.txt".format(sys.argv[0], time.strftime("%Y%m%dT%H%M%S"))
-            with open(self.dumpfilepath, 'w') as f:
+            self.dumpfilepath = "kijiji_dump_{}.txt".format(time.strftime("%Y%m%dT%H%M%S"))
+            with open(self.dumpfilepath, 'a') as f:
                 f.write(dump)
     def __str__(self):
         if self.dumpfilepath:
