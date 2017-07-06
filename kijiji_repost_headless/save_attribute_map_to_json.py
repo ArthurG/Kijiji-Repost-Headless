@@ -152,5 +152,5 @@ for category_id, category_name in get_category_map(session, [], True).items():
 
     postAdAttributes.append(category_props)
 
-with open('kijiji_api.json', 'w') as fp:
+with open('kijiji_categories_attrs.json', 'w') as fp:
     json.dump(postAdAttributes, fp)

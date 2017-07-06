@@ -52,7 +52,7 @@ def restart_function(func):
 def pick_category():
     ans = {}
 
-    kijiji_categories_and_attributes = json.load(open('kijiji_api.json', 'r'))
+    kijiji_categories_and_attributes = json.load(open('kijiji_categories_attrs.json', 'r'))
 
     while True:
         keyword = input("Please provide a category keyword to search for: ")
