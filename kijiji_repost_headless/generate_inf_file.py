@@ -82,8 +82,7 @@ def pick_category():
     for attribute in selectedCategory['attributes']:
         print(attribute['attribute_options'])
         if (attribute['attribute_options'] == None):
-            ans[attribute['attribute_id']] = input("Enter a value: ")
-
+            ans[attribute['attribute_id']] = input("Enter a value related to {}: ".format(attribute['attribute_name']))
         else:
             for i, attrValue in enumerate(attribute['attribute_options']):
                 print(i + 1, attrValue['option_name'])
