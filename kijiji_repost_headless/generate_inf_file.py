@@ -73,14 +73,13 @@ def pick_category():
             return None  # this will restart pick_category
         if response.isdigit():
             if 0 < int(response) <= len(possible_categories):
-                selectedCategory = possible_categories[int(response) - 1]
+                selectedCategory = sorted(possible_categories, key=itemgetter('category_name'))[int(response) - 1]
                 break
         print("Enter a valid number!")
 
     ans['category'] = selectedCategory['category_id']
 
     for attribute in selectedCategory['attributes']:
-        print(attribute['attribute_options'])
         if (attribute['attribute_options'] == None):
             ans[attribute['attribute_id']] = input("Enter a value related to {}: ".format(attribute['attribute_name']))
         else:
@@ -155,7 +154,6 @@ if __name__ == '__main__':
     if pmtType == 'FIXED':
         f.write("postAdForm.priceAmount={}\n".format(price))
     [f.write("postAdForm.attributeMap[{}]={}\n".format(attrKey, attrVal)) for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
-    f.write("postAdForm.attributeMap[forsaleby_s]=ownr"+"\n")
     f.write("postAdForm.title={}\n".format(title))
     f.write("postAdForm.description={}\n".format(description))
     f.write("postAdForm.locationId={}\n".format(locationId))
