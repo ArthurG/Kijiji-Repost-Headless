@@ -1,10 +1,10 @@
 #TODO: Actual error handling
 
 import json
-
 import requests
+from operator import itemgetter
 from get_ids import get_location_and_area_ids
-from posting_category import *
+
 
 adType = ['OFFER', 'WANTED']
 priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
@@ -51,15 +51,19 @@ def restart_function(func):
 #{'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
 def pick_category():
     ans = {}
+
+    kijiji_categories_and_attributes = json.load(open('kijiji_categories_attrs.json', 'r'))
+
     while True:
         keyword = input("Please provide a category keyword to search for: ")
-        possibleCategories = sqliteSession.query(PostingCategory).filter(PostingCategory.name.like("%"+keyword+"%"))
-        if possibleCategories.count() < 1:
+        possible_categories = [cat for cat in kijiji_categories_and_attributes if keyword in cat['category_name']]
+        if len(possible_categories) < 1:
             print("Could not find any categories using the given keyword. Try again.")
         else:
             break
-    for i, cat in enumerate(possibleCategories):
-        print("{:>2d} - {}".format(i+1, cat))
+
+    for i, cat in enumerate(sorted(possible_categories, key=itemgetter('category_name'))):
+        print("{:>2d} - {}".format(i + 1, cat['category_name']))
 
     # make sure the input is a number and a valid index
     while True:
@@ -68,27 +72,32 @@ def pick_category():
             print()  # empty line
             return None  # this will restart pick_category
         if response.isdigit():
-            if 0 < int(response) <= possibleCategories.count():
-                selectedCategory = possibleCategories[int(response) - 1]
+            if 0 < int(response) <= len(possible_categories):
+                selectedCategory = sorted(possible_categories, key=itemgetter('category_name'))[int(response) - 1]
                 break
         print("Enter a valid number!")
 
-    ans['category'] = selectedCategory.kijijiId
-    for attribute in selectedCategory.attribute:
-        for i, attrValue in enumerate(attribute.acceptableValue):
-            print(i+1, attrValue.value)
+    ans['category'] = selectedCategory['category_id']
 
-        # make sure the input is a number and a valid index
-        while True:
-            response = input("Choose most relevant category relating to " + attribute.kijijiName + " [To restart, enter 0] : ")
-            if response == "0":
-                print()  # empty line
-                return None  # this will restart pick_category
-            if response.isdigit():
-                if 0 < int(response) <= len(attribute.acceptableValue):
-                    ans[attribute.kijijiName] = attribute.acceptableValue[int(response) - 1].kijijiValue
-                    break
-            print("Enter a valid number!")
+    for attribute in selectedCategory['attributes']:
+        if (attribute['attribute_options'] == None):
+            ans[attribute['attribute_id']] = input("Enter a value related to {}: ".format(attribute['attribute_name']))
+        else:
+            for i, attrValue in enumerate(attribute['attribute_options']):
+                print(i + 1, attrValue['option_name'])
+
+            # make sure the input is a number and a valid index
+            while True:
+                response = input("Choose most relevant category relating to " + attribute[
+                    'attribute_name'] + " [To restart, enter 0] : ")
+                if response == "0":
+                    print()  # empty line
+                    return None  # this will restart pick_category
+                if response.isdigit():
+                    if 0 < int(response) <= len(attribute['attribute_options']):
+                        ans[attribute['attribute_id']] = attribute['attribute_options'][int(response) - 1]['option_id']
+                        break
+                print("Enter a valid number!")
 
     return ans
 
@@ -136,7 +145,11 @@ if __name__ == '__main__':
     f.write("postAdForm.geocodeLat={}\n".format(addressMap['lat']))
     f.write("postAdForm.geocodeLng={}\n".format(addressMap['lng']))
     f.write("postAdForm.city={}\n".format(addressMap['city']))
+    f.write("postAdForm.addressCity={}\n".format(addressMap['city']))
     f.write("postAdForm.province={}\n".format(addressMap['province']))
+    f.write("postAdForm.addressProvince={}\n".format(addressMap['province']))
+    f.write("postAdForm.postalCode={}\n".format(addressMap['postal_code']))
+    f.write("postAdForm.addressPostalCode={}\n".format(addressMap['postal_code']))
     f.write("PostalLat={}\n".format(addressMap['lat']))
     f.write("PostalLng={}\n".format(addressMap['lng']))
     f.write("categoryId={}\n".format(categoryMap['category']))
@@ -145,15 +158,14 @@ if __name__ == '__main__':
     if pmtType == 'FIXED':
         f.write("postAdForm.priceAmount={}\n".format(price))
     [f.write("postAdForm.attributeMap[{}]={}\n".format(attrKey, attrVal)) for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
-    f.write("postAdForm.attributeMap[forsaleby_s]=ownr"+"\n")
     f.write("postAdForm.title={}\n".format(title))
     f.write("postAdForm.description={}\n".format(description))
     f.write("postAdForm.locationId={}\n".format(locationId))
     f.write("locationLevel0={}\n".format(locationArea))
-    f.write("postAdForm.postalCode={}\n".format(addressMap['postal_code']))
     f.write("featuresForm.topAdDuration=7\n")
     f.write("submitType=saveAndCheckout\n")
     f.write("imageCsv={}\n".format(photos))
     f.close()
 
     print("myAd.inf file created. Use this file to post your ad.")
+
