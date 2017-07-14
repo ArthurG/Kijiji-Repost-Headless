@@ -164,6 +164,7 @@ class KijijiApi:
         # Retrive tokens for website
         data['ca.kijiji.xsrf.token'] = get_token(resp.text, 'ca.kijiji.xsrf.token')
         data['postAdForm.fraudToken'] = get_token(resp.text, 'postAdForm.fraudToken')
+        data['postAdForm.description'] = data['postAdForm.description'].replace("\\n", "\n")
 
         # Upload the ad itself
         newAdUrl = "https://www.kijiji.ca/p-submit-ad.html"
