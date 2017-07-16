@@ -13,20 +13,21 @@
 ## Usage
 
 ### Generating a .inf file for an ad
-- Generate a posting file (myAd.inf) with the command `python generate_inf_file.py` and follow the prompts
+- Generate a posting file (item.inf) with the command `python generate_inf_file.py` and follow the prompts
 - Place all photo dependancies in the current directory
 
 ### Posting + Reposting an ad
 Make sure you're in the correct directory before proceeding!
+
 `cd kijiji_repost_headless`
 
-To post myAd.inf:
+To post item.inf:
 
-`python kijiji_cmd.py -u (username) -p (password) post myAd.inf`
+`python kijiji_cmd.py -u (username) -p (password) post item.inf`
 
-To repost myAd.inf (will delete the ad if it is already posted prior to posting):
+To repost item.inf (will delete the ad if it is already posted prior to posting):
 
-`python kijiji_cmd.py -u (username) -p (password) repost myAd.inf`
+`python kijiji_cmd.py -u (username) -p (password) repost item.inf`
 
 To delete all ads:
 

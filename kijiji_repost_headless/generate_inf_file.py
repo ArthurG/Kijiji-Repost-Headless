@@ -123,7 +123,7 @@ def get_description():
 if __name__ == '__main__':
     
     print("****************************************************************")
-    print("* Creating the myAd.inf file. Please answer all the questions. *")
+    print("* Creating the item.inf file. Please answer all the questions. *")
     print("****************************************************************\n")
 
     print("Your ad must be submitted in a specific category.")
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     ad = get_enum(adType)
     photos = input("List of image filenames to upload (comma separated): ")
 
-    f = open('myAd.inf', 'w')
+    f = open('item.inf', 'w')
     f.write("postAdForm.geocodeLat={}\n".format(addressMap['lat']))
     f.write("postAdForm.geocodeLng={}\n".format(addressMap['lng']))
     f.write("postAdForm.city={}\n".format(addressMap['city']))
@@ -167,5 +167,5 @@ if __name__ == '__main__':
     f.write("imageCsv={}\n".format(photos))
     f.close()
 
-    print("myAd.inf file created. Use this file to post your ad.")
+    print("item.inf file created. Use this file to post your ad.")
 
