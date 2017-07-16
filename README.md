@@ -36,7 +36,7 @@ To delete one ad:
 
 `python kijiji_cmd.py -u (username) -p (password) delete (adId)`
 
-Alternatively, there are also comands for posting/reposting an ad from a folder, which is especially useful for not entering your username/password every time 
+Alternatively, there are also commands for posting/reposting an ad from a folder, which is especially useful for saving you from re-entering your username/password 
 
 Inside your folder, include ALL photos, an `item.inf` ad file, and a `login.inf` file with the first line containing your Kijiji login email and the second line containing your Kijiji login password.
 
