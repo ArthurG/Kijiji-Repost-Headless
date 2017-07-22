@@ -51,28 +51,6 @@ def get_token(html, tokenName):
         return ""
     return res[0]['value']
 
-def upload_one_image(imgFile):
-    """
-    Try up to three times to upload the file
-    If successful, return the url
-    """
-    imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
-    for i in range(0, 3):
-        files = {'file': imgFile}
-        ses = requests.Session()
-        r = ses.post(imageUploadUrl, files=files)
-        if (r.status_code != 200):
-            raise PostAdException(r.text)
-        try:
-            imageTree = json.loads(r.text)
-            imgUrl = imageTree['thumbnailUrl']
-            print("Image Upload success on try #{}".format(i+1))
-            return imgUrl
-        except KeyError as e:
-            print("Image Upload failed on try #{}".format(i+1))
-            pass
-    return ""
-
 
 class KijijiApi:
     """
@@ -136,15 +114,28 @@ class KijijiApi:
         allAds = self.get_all_ads()
         [self.delete_ad(i) for t, i in allAds if t.strip() == title.strip()]
 
-    def upload_image(self, imageFiles=[]):
+    def upload_image(self, token, imageFiles=[]):
         """
         Upload one or more photos to Kijiji concurrently using Pool
 
         'imageFiles' is a list of strings corresponding to image filenames
         """
         images = []
-        with Pool(5) as p:
-            images = p.map(upload_one_image, imageFiles)
+        imageUploadUrl = 'https://www.kijiji.ca/p-upload-image.html'
+        for imgFile in imageFiles:
+            for i in range(0, 3):
+                files = {'file': imgFile}
+                r = self.session.post(imageUploadUrl, files=files, headers={"x-ebay-box-token": token})
+                if (r.status_code != 200):
+                    print(r.status_code)
+                try:
+                    imageTree = json.loads(r.text)
+                    imgUrl = imageTree['thumbnailUrl']
+                    print("Image Upload success on try #{}".format(i+1))
+                    images.append(imgUrl)
+                    break
+                except KeyError as e:
+                    print("Image Upload failed on try #{}".format(i+1))
         return [image for image in images if image is not None]
 
     def post_ad_using_data(self, data, imageFiles=[]):
@@ -154,12 +145,14 @@ class KijijiApi:
         'data' is a dictionary of ad data that to be posted
         'imageFiles' is a list of strings corresponding to image filenames to upload
         """
-        # Upload the images
-        imageList = self.upload_image(imageFiles)
-        data['images'] = ",".join(imageList)
-
         # Load ad posting page
         resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=773')
+        token_regex = r"initialXsrfToken: '\S+'"
+        image_upload_token = re.findall(token_regex, resp.text)[0].strip("initialXsrfToken: '").strip("'")
+
+        # Upload the images
+        imageList = self.upload_image(image_upload_token, imageFiles)
+        data['images'] = ",".join(imageList)
 
         # Retrive tokens for website
         data['ca.kijiji.xsrf.token'] = get_token(resp.text, 'ca.kijiji.xsrf.token')
@@ -171,8 +164,8 @@ class KijijiApi:
         resp = self.session.post(newAdUrl, data=data)
         if not len(data.get("postAdForm.title", "")) >= 10:
             raise AssertionError("Your title is too short!")
-        if (resp.status_code != 200 or \
-                "message-container success" not in resp.text):
+        if (int(resp.status_code) != 200 or \
+                "Delete Ad?" not in resp.text):
             raise PostAdException(resp.text)
 
         # Get adId and return it
