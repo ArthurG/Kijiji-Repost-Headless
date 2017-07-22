@@ -130,7 +130,7 @@ def repost_ad(args):
         print("Did not find an existing ad with matching title, skipping ad deletion")
         pass
     # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
-    sleep(180)
+    sleep(20)
     post_ad(args)
 
 def repost_folder(args):
