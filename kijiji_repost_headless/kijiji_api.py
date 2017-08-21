@@ -132,14 +132,15 @@ class KijijiApi:
                 r = self.session.post(imageUploadUrl, files=files, headers={"x-ebay-box-token": token})
                 if (r.status_code != 200):
                     print(r.status_code)
-                try:
-                    imageTree = json.loads(r.text)
-                    imgUrl = imageTree['thumbnailUrl']
-                    print("Image Upload success on try #{}".format(i+1))
-                    images.append(imgUrl)
-                    break
-                except KeyError as e:
-                    print("Image Upload failed on try #{}".format(i+1))
+                else:
+                    try:
+                        imageTree = json.loads(r.text)
+                        imgUrl = imageTree['thumbnailUrl']
+                        print("Image Upload success on try #{}".format(i+1))
+                        images.append(imgUrl)
+                        break
+                    except KeyError as e:
+                        print("Image Upload failed on try #{}".format(i+1))
         return [image for image in images if image is not None]
 
     def post_ad_using_data(self, data, imageFiles=[]):
