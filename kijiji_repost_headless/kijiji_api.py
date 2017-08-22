@@ -138,7 +138,7 @@ class KijijiApi:
                     print("Image Upload success on try #{}".format(i+1))
                     images.append(imgUrl)
                     break
-                except KeyError as e:
+                except (KeyError, ValueError) as e:
                     print("Image Upload failed on try #{}".format(i+1))
         return [image for image in images if image is not None]
 
