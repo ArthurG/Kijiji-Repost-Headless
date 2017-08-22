@@ -39,6 +39,10 @@ def main():
     nukeParser = subparsers.add_parser('nuke', help='delete all ads')
     nukeParser.set_defaults(function=nuke)
 
+    checkParser = subparsers.add_parser('check_ad', help='check if ad is active')
+    checkParser.add_argument('folderName', type=str, help='folder containing ad details')
+    checkParser.set_defaults(function=check_ad)
+
     repostParser = subparsers.add_parser('repost', help='repost an existing ad')
     repostParser.add_argument('inf_file', type=str, help='.inf file containing posting details')
     repostParser.set_defaults(function=repost_ad)
@@ -140,6 +144,20 @@ def repost_folder(args):
     get_folder_data(args)
     os.chdir(args.folderName)
     repost_ad(args)
+
+def check_ad(args):
+    """
+    Check if ad is live
+    """
+    api = kijiji_api.KijijiApi()
+    api.login(args.username, args.password)
+    AdName = ""
+    for line in open(args.inf_file, 'rt'):
+        [key, val] = line.strip().rstrip("\n").split("=")
+        if key == "postAdForm.title":
+            AdName = val
+    allAds = api.get_all_ads()
+    return [t for t, i in allAds if t == AdName]
 
 def nuke(args):
     """
