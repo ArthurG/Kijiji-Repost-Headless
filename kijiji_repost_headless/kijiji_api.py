@@ -34,6 +34,10 @@ class PostAdException(KijijiApiException):
     def __str__(self):
         return "Could not post ad.\n"+super().__str__()
 
+class BannedException(KijijiApiException):
+    def __str__(self):
+        return "Could not post ad, this user is banned.\n"+super().__str__()
+
 class DeleteAdException(KijijiApiException):
     def __str__(self):
         return "Could not delete ad.\n"+super().__str__()
@@ -134,7 +138,7 @@ class KijijiApi:
                     print("Image Upload success on try #{}".format(i+1))
                     images.append(imgUrl)
                     break
-                except KeyError as e:
+                except (KeyError, ValueError) as e:
                     print("Image Upload failed on try #{}".format(i+1))
         return [image for image in images if image is not None]
 
@@ -166,7 +170,10 @@ class KijijiApi:
             raise AssertionError("Your title is too short!")
         if (int(resp.status_code) != 200 or \
                 "Delete Ad?" not in resp.text):
-            raise PostAdException(resp.text)
+            if "There was an issue posting your ad, please contact Customer Service." in resp.text:
+                raise BannedException(resp.text)
+            else:
+                raise PostAdException(resp.text)
 
         # Get adId and return it
         newCookieWithAdId = resp.headers['Set-Cookie']
@@ -185,3 +192,4 @@ class KijijiApi:
         adIds = [entry['id'] for entry in myAdsTree['myAdEntries']]
         adNames = [entry['title'] for entry in myAdsTree['myAdEntries']]
         return zip(adNames, adIds)
+
