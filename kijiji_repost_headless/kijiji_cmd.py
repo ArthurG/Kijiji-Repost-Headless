@@ -10,8 +10,7 @@ if sys.version_info < (3, 0):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-            description="Post ads on Kijiji")
+    parser = argparse.ArgumentParser(description="Post ads on Kijiji")
     parser.add_argument('-u', '--username', help='username of your kijiji account')
     parser.add_argument('-p', '--password', help='password of your kijiji account')
 
@@ -33,7 +32,7 @@ def main():
     showParser.set_defaults(function=show_ads)
 
     deleteParser = subparsers.add_parser('delete', help='delete a listed ad')
-    deleteParser.add_argument('id',type=str, help='id of the ad you wish to delete')
+    deleteParser.add_argument('id', type=str, help='id of the ad you wish to delete')
     deleteParser.set_defaults(function=delete_ad)
 
     nukeParser = subparsers.add_parser('nuke', help='delete all ads')
@@ -59,10 +58,11 @@ def get_folder_data(args):
     Set ad data inf file and extract login credentials from inf files
     """
     args.inf_file = "item.inf"
-    cred_file = args.folderName+"/login.inf"
+    cred_file = args.folderName + "/login.inf"
     creds = [line.strip() for line in open(cred_file, 'r')]
     args.username = creds[0]
     args.password = creds[1]
+
 
 def get_inf_details(inf_file):
     """
@@ -82,6 +82,7 @@ def post_folder(args):
     os.chdir(args.folderName)
     post_ad(args)
 
+
 def post_ad(args):
     """
     Post new ad
@@ -95,6 +96,10 @@ def post_ad(args):
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
         api.post_ad_using_data(data, imageFiles)
+        sleep(180)
+    if not check_ad(args):
+        print("Failed Attempt #" + str(attempts) + ", giving up.")
+
 
 def show_ads(args):
     """
@@ -104,6 +109,7 @@ def show_ads(args):
     api.login(args.username, args.password)
     [print("{} '{}'".format(adId, adName)) for adName, adId in api.get_all_ads()]
 
+
 def delete_ad(args):
     """
     Delete ad
@@ -112,6 +118,7 @@ def delete_ad(args):
     api.login(args.username, args.password)
     api.delete_ad(args.id)
 
+
 def delete_ad_using_title(name):
     """
     Delete ad based on ad title
@@ -119,10 +126,11 @@ def delete_ad_using_title(name):
     api = kijiji_api.KijijiApi()
     api.delete_ad_using_title(name)
 
+
 def repost_ad(args):
     """
     Repost ad
-    
+
     Try to delete ad with same title if possible before reposting new ad
     """
     api = kijiji_api.KijijiApi()
@@ -139,8 +147,9 @@ def repost_ad(args):
         print("Did not find an existing ad with matching title, skipping ad deletion")
         pass
     # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
-    sleep(100)
+    sleep(180)
     post_ad(args)
+
 
 def repost_folder(args):
     """
@@ -149,6 +158,7 @@ def repost_folder(args):
     get_folder_data(args)
     os.chdir(args.folderName)
     repost_ad(args)
+
 
 def check_ad(args):
     """
@@ -163,6 +173,7 @@ def check_ad(args):
             AdName = val
     allAds = api.get_all_ads()
     return [t for t, i in allAds if t == AdName]
+
 
 def nuke(args):
     """
