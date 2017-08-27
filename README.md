@@ -47,6 +47,26 @@ To repost from folder:
 
 `python kijiji_repost_headless repost_folder (folderName)`
 
+## Project Structure
+
+```
+project
+│   README.md
+│   LICENSE
+│   requirements.txt    
+│
+└───kijiji_repost_headless
+│   │   kijiji_api.py -> Interfaces with Kijiji
+│   │   generate_inf_file.py -> Makes item.inf
+│   │   get_ids -> Used for retreiving kijiji location data
+│   │   kijiji_categories_attr.json -> Finds out what properties each item has
+│   │   kijiji_categories_attr.json -> Finds out what properties each item has
+│   │   save_attribute_map_to_json.py -> Remakes kijiji_categories_attr.json
+│   │   __main__.py -> Wraps kijiji_api.py for ease of use from command line, file is run when python kijiji_repost_headless is run
+│   │
+└───tests
+```
+
 ## Issues
 Please open a GitHub issue or pull request if you discover problems.
 
