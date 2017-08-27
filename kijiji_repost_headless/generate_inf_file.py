@@ -4,6 +4,7 @@ import json
 import requests
 from operator import itemgetter
 from get_ids import get_location_and_area_ids
+import os
 
 
 adType = ['OFFER', 'WANTED']
@@ -52,7 +53,9 @@ def restart_function(func):
 def pick_category():
     ans = {}
 
-    kijiji_categories_and_attributes = json.load(open('kijiji_categories_attrs.json', 'r'))
+    filename = os.path.join(os.path.dirname(__file__), 'kijiji_categories_attrs.json')
+    print(filename)
+    kijiji_categories_and_attributes = json.load(open(filename, 'r'))
 
     while True:
         keyword = input("Please provide a category keyword to search for: ")
@@ -120,8 +123,8 @@ def get_description():
     return "\\n".join(contents)
 
 
-if __name__ == '__main__':
-    
+
+def run_program():
     print("****************************************************************")
     print("* Creating the item.inf file. Please answer all the questions. *")
     print("****************************************************************\n")
@@ -169,3 +172,5 @@ if __name__ == '__main__':
 
     print("item.inf file created. Use this file to post your ad.")
 
+if __name__ == '__main__':
+    run_program()
