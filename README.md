@@ -13,29 +13,27 @@
 ## Usage
 
 ### Generating a .inf file for an ad
-- Generate a posting file (item.inf) with the command `python generate_inf_file.py` and follow the prompts
+- Generate a posting file (item.inf) with the command `python kijiji_repost_headless build_ad` and follow the prompts
 - Place all photo dependancies in the current directory
 
 ### Posting + Reposting an ad
-Make sure you're in the correct directory before proceeding!
-
-`cd kijiji_repost_headless`
+Make sure you're in the ROOT directory of the project before proceeding!
 
 To post item.inf:
 
-`python kijiji_cmd.py -u (username) -p (password) post item.inf`
+`python kijiji_repost_headless -u (username) -p (password) post item.inf`
 
 To repost item.inf (will delete the ad if it is already posted prior to posting):
 
-`python kijiji_cmd.py -u (username) -p (password) repost item.inf`
+`python kijiji_repost_headless -u (username) -p (password) repost item.inf`
 
 To delete all ads:
 
-`python kijiji_cmd.py -u (username) -p (password) nuke`
+`python  kijiji_repost_headless -u (username) -p (password) nuke`
 
 To delete one ad:
 
-`python kijiji_cmd.py -u (username) -p (password) delete (adId)`
+`python kijiji_repost_headless -u (username) -p (password) delete (adId)`
 
 Alternatively, there are also commands for posting/reposting an ad from a folder, which is especially useful for saving you from re-entering your username/password 
 
@@ -43,11 +41,31 @@ Inside your folder, include ALL photos, an `item.inf` ad file, and a `login.inf`
 
 To post from folder:
 
-`python kijiji_cmd.py folder (folderName)`
+`python kijiji_repost_headless folder (folderName)`
 
 To repost from folder:
 
-`python kijiji_cmd.py repost_folder (folderName)`
+`python kijiji_repost_headless repost_folder (folderName)`
+
+## Project Structure
+
+```
+project
+│   README.md
+│   LICENSE
+│   requirements.txt    
+│
+└───kijiji_repost_headless
+│   │   kijiji_api.py -> Interfaces with Kijiji
+│   │   generate_inf_file.py -> Makes item.inf
+│   │   get_ids -> Used for retreiving kijiji location data
+│   │   kijiji_categories_attr.json -> Finds out what properties each item has
+│   │   kijiji_categories_attr.json -> Finds out what properties each item has
+│   │   save_attribute_map_to_json.py -> Remakes kijiji_categories_attr.json
+│   │   __main__.py -> Wraps kijiji_api.py for ease of use from command line, file is run when 'python kijiji_repost_headless' is run
+│   │
+└───tests
+```
 
 ## Issues
 Please open a GitHub issue or pull request if you discover problems.

@@ -4,6 +4,7 @@ import sys
 from time import sleep
 
 import kijiji_api
+import generate_inf_file as generator
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -45,6 +46,9 @@ def main():
     repostParser = subparsers.add_parser('repost', help='repost an existing ad')
     repostParser.add_argument('inf_file', type=str, help='.inf file containing posting details')
     repostParser.set_defaults(function=repost_ad)
+
+    buildParser = subparsers.add_parser('build_ad', help='Generates the item.inf file for a new ad')
+    buildParser.set_defaults(function=generate_inf_file)
 
     args = parser.parse_args()
     try:
@@ -184,6 +188,8 @@ def nuke(args):
     allAds = api.get_all_ads()
     [api.delete_ad(adId) for adName, adId in allAds]
 
+def generate_inf_file(args):
+    generator.run_program()
 
 if __name__ == "__main__":
     main()
