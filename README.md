@@ -62,7 +62,7 @@ project
 │   │   kijiji_categories_attr.json -> Finds out what properties each item has
 │   │   kijiji_categories_attr.json -> Finds out what properties each item has
 │   │   save_attribute_map_to_json.py -> Remakes kijiji_categories_attr.json
-│   │   __main__.py -> Wraps kijiji_api.py for ease of use from command line, file is run when python kijiji_repost_headless is run
+│   │   __main__.py -> Wraps kijiji_api.py for ease of use from command line, file is run when 'python kijiji_repost_headless' is run
 │   │
 └───tests
 ```

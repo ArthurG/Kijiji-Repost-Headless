@@ -54,7 +54,6 @@ def pick_category():
     ans = {}
 
     filename = os.path.join(os.path.dirname(__file__), 'kijiji_categories_attrs.json')
-    print(filename)
     kijiji_categories_and_attributes = json.load(open(filename, 'r'))
 
     while True:

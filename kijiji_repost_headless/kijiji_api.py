@@ -124,7 +124,7 @@ class KijijiApi:
 
         'image_files' is a list of binary objects corresponding to images
         """
-        images_urls = []
+        image_urls = []
         image_upload_url = 'https://www.kijiji.ca/p-upload-image.html'
         for img_file in image_files:
             for i in range(0, 3):
@@ -192,5 +192,5 @@ class KijijiApi:
         my_ads_page = self.session.get(my_ads_url)
         my_ads_tree = json.loads(my_ads_page.text)
         ad_ids = [entry['id'] for entry in my_ads_tree['myAdEntries']]
-        ad_names = [entry['title'] for entry in myAdsTree['myAdEntries']]
+        ad_names = [entry['title'] for entry in my_ads_tree['myAdEntries']]
         return zip(ad_names, ad_ids)
