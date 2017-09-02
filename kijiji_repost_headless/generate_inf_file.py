@@ -58,7 +58,7 @@ def pick_category():
 
     while True:
         keyword = input("Please provide a category keyword to search for: ")
-        possible_categories = [cat for cat in kijiji_categories_and_attributes if keyword in cat['category_name']]
+        possible_categories = [cat for cat in kijiji_categories_and_attributes if keyword.lower() in cat['category_name'].lower()]
         if len(possible_categories) < 1:
             print("Could not find any categories using the given keyword. Try again.")
         else:
