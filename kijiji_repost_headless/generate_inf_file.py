@@ -1,22 +1,24 @@
-#TODO: Actual error handling
+# TODO: Actual error handling
 
 import json
-import requests
 from operator import itemgetter
-from get_ids import get_location_and_area_ids
 import os
+
+import requests
+
+from get_ids import get_location_and_area_ids
 
 
 adType = ['OFFER', 'WANTED']
 priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 
 
-#Dictionary w/ postal_code, lat, lng, city, province
+# Dictionary w/ postal_code, lat, lng, city, province
 def get_address_map():
     address = input("Your address: ")
     data = {'address': address}
     endpoint = 'https://maps.googleapis.com/maps/api/geocode/json'
-    resp = requests.get(endpoint,params=data)
+    resp = requests.get(endpoint, params=data)
 
     ans = {}
     latlng = json.loads(resp.text)['results'][0]['geometry']['location']
@@ -30,11 +32,13 @@ def get_address_map():
     ans['province'] = province
     return ans
 
+
 def get_enum(array):
     for i, item in enumerate(array):
         print("{:>2d} - {}".format(i+1, item))
     response = int(input("Choose one: "))
     return array[response-1]
+
 
 def restart_function(func):
     """
@@ -49,7 +53,8 @@ def restart_function(func):
             break
     return returned_value
 
-#{'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
+
+# {'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
 def pick_category():
     ans = {}
 
@@ -103,6 +108,7 @@ def pick_category():
 
     return ans
 
+
 # Multiline ad description
 def get_description():
     contents = []
@@ -120,7 +126,6 @@ def get_description():
             continue
         contents.append(line)
     return "\\n".join(contents)
-
 
 
 def run_program():
@@ -170,6 +175,7 @@ def run_program():
     f.close()
 
     print("item.inf file created. Use this file to post your ad.")
+
 
 if __name__ == '__main__':
     run_program()
