@@ -161,9 +161,9 @@ class KijijiApi:
             else:
                 raise KijijiApiException("Could not post ad.", resp.text)
 
-        # Get adId and return it
-        new_cookie_with_ad_id = resp.headers['Set-Cookie']
-        ad_id = re.search('\d+', new_cookie_with_ad_id).group()
+        # Extract ad ID from response set-cookie
+        ad_id = re.search('kjrva=(\d+)', resp.headers['Set-Cookie']).group(1)
+
         return ad_id
 
     def get_all_ads(self):
