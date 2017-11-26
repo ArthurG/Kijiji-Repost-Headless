@@ -5,6 +5,7 @@ from time import strftime
 
 import bs4
 import requests
+import yaml
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -29,16 +30,48 @@ class KijijiApiException(Exception):
             return self.msg
 
 
-def get_token(html, token_name):
+def get_token(html, attrib_name):
     """
-    Retrieve CSRF token from webpage
-    Tokens are different every time a page is visited
+    Return value of first match for element with name attribute
     """
     soup = bs4.BeautifulSoup(html, 'html.parser')
-    res = soup.select("[name={}]".format(token_name))
+    res = soup.select("[name={}]".format(attrib_name))
     if not res:
-        raise KijijiApiException("Token '{}' not found in html text.".format(token_name), html)
+        raise KijijiApiException("Element with name attribute '{}' not found in html text.".format(attrib_name), html)
     return res[0]['value']
+
+
+def get_kj_data(html):
+    """
+    Return dict of Kijiji page data
+    The 'window.__data' JSON object contains many useful key/values
+    """
+    soup = bs4.BeautifulSoup(html, 'html.parser')
+    p = re.compile('window.__data=(.*);')
+    script_list = soup.find_all("script", {"src": False})
+    for script in script_list:
+        if script:
+            m = p.search(script.string)
+            if m:
+                return json.loads(m.group(1))
+    raise KijijiApiException("'__data' JSON object not found in html text.", html)
+
+
+def get_xsrf_token(html):
+    """
+    Return XSRF token
+    This function is only necessary for the 'm-my-ads.html' page, as this particular page
+    does not contain the usual 'ca.kijiji.xsrf.token' hidden HTML form input element, which is easier to scrape
+    """
+    soup = bs4.BeautifulSoup(html, 'html.parser')
+    p = re.compile('Zoop\.init\(.*config: ({.+?}).*\);')
+    for script in soup.find_all("script", {"src": False}):
+        if script:
+            m = p.search(script.string.replace("\n", ""))
+            if m:
+                # Using yaml to load since this is not valid JSON
+                return yaml.load(m.group(1))['token']
+    raise KijijiApiException("XSRF token not found in html text.", html)
 
 
 class KijijiApi:
@@ -61,7 +94,7 @@ class KijijiApi:
             'rememberMe': 'true',
             '_rememberMe': 'on',
             'ca.kijiji.xsrf.token': get_token(resp.text, 'ca.kijiji.xsrf.token'),
-            'targetUrl': 'L3QtbG9naW4uaHRtbD90YXJnZXRVcmw9TDNRdGJHOW5hVzR1YUhSdGJEOTBZWEpuWlhSVmNtdzlUREpuZEZwWFVuUmlNalV3WWpJMGRGbFlTbXhaVXpoNFRucEJkMDFxUVhsWWJVMTZZbFZLU1dGVmJHdGtiVTVzVlcxa1VWSkZPV0ZVUmtWNlUyMWpPVkJSTFMxZVRITTBVMk5wVW5wbVRHRlFRVUZwTDNKSGNtVk9kejA5XnpvMnFzNmc2NWZlOWF1T1BKMmRybEE9PQ--'
+            'targetUrl': get_kj_data(resp.text)['config']['targetUrl'],
         }
         resp = self.session.post(login_url, data=payload)
         if not self.is_logged_in():
@@ -89,7 +122,7 @@ class KijijiApi:
             'Mode': 'ACTIVE',
             'needsRedirect': 'false',
             'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(ad_id),
-            'ca.kijiji.xsrf.token': get_token(my_ads_page.text, 'ca.kijiji.xsrf.token')
+            'ca.kijiji.xsrf.token': get_xsrf_token(my_ads_page.text),
         }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params)
         if "OK" not in resp.text:
@@ -112,10 +145,8 @@ class KijijiApi:
         image_upload_url = 'https://www.kijiji.ca/p-upload-image.html'
         for img_file in image_files:
             for i in range(0, 3):
-                files = {'file': img_file}
-                r = self.session.post(image_upload_url, files=files, headers={"x-ebay-box-token": token})
-                if r.status_code != 200:
-                    print(r.status_code)
+                r = self.session.post(image_upload_url, files={'file': img_file}, headers={"X-Ebay-Box-Token": token})
+                r.raise_for_status()
                 try:
                     image_tree = json.loads(r.text)
                     img_url = image_tree['thumbnailUrl']
@@ -133,29 +164,37 @@ class KijijiApi:
         'data' is a dictionary of ad data that to be posted
         'image_files' is a list of binary objects corresponding to images to upload
         """
-        # Load ad posting page
-        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=773')
+        # Load ad posting page (arbitrary category)
+        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=15')
 
-        # Get tokens required for upload
-        token_regex = r"initialXsrfToken: '\S+'"
-        image_upload_token = re.findall(token_regex, resp.text)[0].strip("initialXsrfToken: '").strip("'")
+        # Get token required for upload
+        m = re.search(r"initialXsrfToken: '(\S+)'", resp.text)
+        if m:
+            image_upload_token = m.group(1)
+        else:
+            raise KijijiApiException("'initialXsrfToken' not found in html text.", resp.text)
 
         # Upload the images
         image_list = self.upload_image(image_upload_token, image_files)
         data['images'] = ",".join(image_list)
 
-        # Retrieve tokens for website
+        # Retrieve XSRF tokens
         data['ca.kijiji.xsrf.token'] = get_token(resp.text, 'ca.kijiji.xsrf.token')
         data['postAdForm.fraudToken'] = get_token(resp.text, 'postAdForm.fraudToken')
+
+        # Format ad data and check constraints
         data['postAdForm.description'] = data['postAdForm.description'].replace("\\n", "\n")
+        title_len = len(data.get("postAdForm.title", ""))
+        if not title_len >= 10:
+            raise KijijiApiException("Your ad title is too short! (min 10 chars)")
+        if title_len > 64:
+            raise KijijiApiException("Your ad title is too long! (max 64 chars)")
 
         # Upload the ad itself
         new_ad_url = "https://www.kijiji.ca/p-submit-ad.html"
         resp = self.session.post(new_ad_url, data=data)
-        if not len(data.get("postAdForm.title", "")) >= 10:
-            raise AssertionError("Your title is too short!")
-        if (int(resp.status_code) != 200 or
-                "Delete Ad?" not in resp.text):
+        resp.raise_for_status()
+        if "Delete Ad?" not in resp.text:
             if "There was an issue posting your ad, please contact Customer Service." in resp.text:
                 raise KijijiApiException("Could not post ad; this user is banned.", resp.text)
             else:
@@ -171,8 +210,8 @@ class KijijiApi:
         Return an iterator of tuples containing the ad title and ad ID for every ad
         """
         resp = self.session.get('https://www.kijiji.ca/m-my-ads.html')
-        user_id = get_token(resp.text, 'userId')
-        my_ads_url = 'https://www.kijiji.ca/j-get-my-ads.json?_=1&currentOffset=0&isPromoting=false&show=ACTIVE&user={}'.format(user_id)
+        user_id = get_kj_data(resp.text)['config']['userId']
+        my_ads_url = 'https://www.kijiji.ca/j-get-my-ads.json?currentOffset=0&show=ACTIVE&user={}'.format(user_id)
         my_ads_page = self.session.get(my_ads_url)
         my_ads_tree = json.loads(my_ads_page.text)
         ad_ids = [entry['id'] for entry in my_ads_tree['myAdEntries']]
