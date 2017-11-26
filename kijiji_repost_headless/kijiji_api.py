@@ -14,38 +14,19 @@ class KijijiApiException(Exception):
     """
     Custom KijijiApi exception class
     """
-    def __init__(self, dump=None):
+    def __init__(self, msg="KijijiApi exception encountered.", dump=None):
+        self.msg = msg
         self.dumpfilepath = ""
         if dump:
-            self.dumpfilepath = "kijiji_dump_{}.txt".format(strftime("%Y%m%dT%H%M%S"))
+            self.dumpfilepath = "kijijiapi_dump_{}.txt".format(strftime("%Y%m%dT%H%M%S"))
             with open(self.dumpfilepath, 'a') as f:
                 f.write(dump)
 
     def __str__(self):
         if self.dumpfilepath:
-            return "See {} in current directory for latest dumpfile.".format(self.dumpfilepath)
+            return "{}\nSee {} in current directory for latest dumpfile.".format(self.msg, self.dumpfilepath)
         else:
-            return ""
-
-
-class SignInException(KijijiApiException):
-    def __str__(self):
-        return "Could not sign in.\n"+super().__str__()
-
-
-class PostAdException(KijijiApiException):
-    def __str__(self):
-        return "Could not post ad.\n"+super().__str__()
-
-
-class BannedException(KijijiApiException):
-    def __str__(self):
-        return "Could not post ad, this user is banned.\n"+super().__str__()
-
-
-class DeleteAdException(KijijiApiException):
-    def __str__(self):
-        return "Could not delete ad.\n"+super().__str__()
+            return self.msg
 
 
 def get_token(html, token_name):
@@ -56,8 +37,7 @@ def get_token(html, token_name):
     soup = bs4.BeautifulSoup(html, 'html.parser')
     res = soup.select("[name={}]".format(token_name))
     if not res:
-        print("Token '{}' not found in html text.".format(token_name))
-        return ""
+        raise KijijiApiException("Token '{}' not found in html text.".format(token_name), html)
     return res[0]['value']
 
 
@@ -85,7 +65,7 @@ class KijijiApi:
         }
         resp = self.session.post(login_url, data=payload)
         if not self.is_logged_in():
-            raise SignInException(resp.text)
+            raise KijijiApiException("Could not log in.", resp.text)
 
     def is_logged_in(self):
         """
@@ -113,7 +93,7 @@ class KijijiApi:
         }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params)
         if "OK" not in resp.text:
-            raise DeleteAdException(resp.text)
+            raise KijijiApiException("Could not delete ad.", resp.text)
 
     def delete_ad_using_title(self, title):
         """
@@ -177,9 +157,9 @@ class KijijiApi:
         if (int(resp.status_code) != 200 or
                 "Delete Ad?" not in resp.text):
             if "There was an issue posting your ad, please contact Customer Service." in resp.text:
-                raise BannedException(resp.text)
+                raise KijijiApiException("Could not post ad; this user is banned.", resp.text)
             else:
-                raise PostAdException(resp.text)
+                raise KijijiApiException("Could not post ad.", resp.text)
 
         # Get adId and return it
         new_cookie_with_ad_id = resp.headers['Set-Cookie']
