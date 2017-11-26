@@ -51,6 +51,14 @@ def main():
     build_parser.set_defaults(function=generate_inf_file)
 
     args = parser.parse_args()
+
+    # Recursively look for the first "login.inf" credentials file starting from the project root dir
+    for dirpath, _, _ in os.walk(os.getcwd()):
+        cred_file = os.path.join(dirpath, "login.inf")
+        if os.path.isfile(cred_file):
+            [args.username, args.password] = [line.strip() for line in open(cred_file, 'r')]
+            break
+
     try:
         args.function(args)
     except AttributeError:
@@ -62,10 +70,10 @@ def get_folder_data(args):
     Set ad data inf file and extract login credentials from inf files
     """
     args.inf_file = "item.inf"
-    cred_file = args.folder_name + "/login.inf"
-    creds = [line.strip() for line in open(cred_file, 'r')]
-    args.username = creds[0]
-    args.password = creds[1]
+    cred_file = os.path.join(args.folder_name, "login.inf")
+    # If "login.inf" credentials file exists within the ad folder, give preference to it
+    if os.path.isfile(cred_file):
+        [args.username, args.password] = [line.strip() for line in open(cred_file, 'r')]
 
 
 def get_inf_details(inf_file):
