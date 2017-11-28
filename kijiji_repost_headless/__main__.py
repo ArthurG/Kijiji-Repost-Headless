@@ -17,38 +17,38 @@ def main():
 
     subparsers = parser.add_subparsers(help='sub-command help')
 
-    postParser = subparsers.add_parser('post', help='post a new ad')
-    postParser.add_argument('inf_file', type=str, help='.inf file containing posting details')
-    postParser.set_defaults(function=post_ad)
+    post_parser = subparsers.add_parser('post', help='post a new ad')
+    post_parser.add_argument('inf_file', type=str, help='.inf file containing posting details')
+    post_parser.set_defaults(function=post_ad)
 
-    folderParser = subparsers.add_parser('folder', help='post ad from folder')
-    folderParser.add_argument('folderName', type=str, help='folder containing ad details')
-    folderParser.set_defaults(function=post_folder)
+    folder_parser = subparsers.add_parser('folder', help='post ad from folder')
+    folder_parser.add_argument('folder_name', type=str, help='folder containing ad details')
+    folder_parser.set_defaults(function=post_folder)
 
-    repostFolderParser = subparsers.add_parser('repost_folder', help='post ad from folder')
-    repostFolderParser.add_argument('folderName', type=str, help='folder containing ad details')
-    repostFolderParser.set_defaults(function=repost_folder)
+    repost_folder_parser = subparsers.add_parser('repost_folder', help='post ad from folder')
+    repost_folder_parser.add_argument('folder_name', type=str, help='folder containing ad details')
+    repost_folder_parser.set_defaults(function=repost_folder)
 
-    showParser = subparsers.add_parser('show', help='show currently listed ads')
-    showParser.set_defaults(function=show_ads)
+    show_parser = subparsers.add_parser('show', help='show currently listed ads')
+    show_parser.set_defaults(function=show_ads)
 
-    deleteParser = subparsers.add_parser('delete', help='delete a listed ad')
-    deleteParser.add_argument('id', type=str, help='id of the ad you wish to delete')
-    deleteParser.set_defaults(function=delete_ad)
+    delete_parser = subparsers.add_parser('delete', help='delete a listed ad')
+    delete_parser.add_argument('id', type=str, help='id of the ad you wish to delete')
+    delete_parser.set_defaults(function=delete_ad)
 
-    nukeParser = subparsers.add_parser('nuke', help='delete all ads')
-    nukeParser.set_defaults(function=nuke)
+    nuke_parser = subparsers.add_parser('nuke', help='delete all ads')
+    nuke_parser.set_defaults(function=nuke)
 
-    checkParser = subparsers.add_parser('check_ad', help='check if ad is active')
-    checkParser.add_argument('folderName', type=str, help='folder containing ad details')
-    checkParser.set_defaults(function=check_ad)
+    check_parser = subparsers.add_parser('check_ad', help='check if ad is active')
+    check_parser.add_argument('folder_name', type=str, help='folder containing ad details')
+    check_parser.set_defaults(function=check_ad)
 
-    repostParser = subparsers.add_parser('repost', help='repost an existing ad')
-    repostParser.add_argument('inf_file', type=str, help='.inf file containing posting details')
-    repostParser.set_defaults(function=repost_ad)
+    repost_parser = subparsers.add_parser('repost', help='repost an existing ad')
+    repost_parser.add_argument('inf_file', type=str, help='.inf file containing posting details')
+    repost_parser.set_defaults(function=repost_ad)
 
-    buildParser = subparsers.add_parser('build_ad', help='Generates the item.inf file for a new ad')
-    buildParser.set_defaults(function=generate_inf_file)
+    build_parser = subparsers.add_parser('build_ad', help='Generates the item.inf file for a new ad')
+    build_parser.set_defaults(function=generate_inf_file)
 
     args = parser.parse_args()
     try:
@@ -62,7 +62,7 @@ def get_folder_data(args):
     Set ad data inf file and extract login credentials from inf files
     """
     args.inf_file = "item.inf"
-    cred_file = args.folderName + "/login.inf"
+    cred_file = args.folder_name + "/login.inf"
     creds = [line.strip() for line in open(cred_file, 'r')]
     args.username = creds[0]
     args.password = creds[1]
@@ -83,7 +83,7 @@ def post_folder(args):
     Post new ad from folder
     """
     get_folder_data(args)
-    os.chdir(args.folderName)
+    os.chdir(args.folder_name)
     post_ad(args)
 
 
@@ -91,18 +91,17 @@ def post_ad(args):
     """
     Post new ad
     """
-    [data, imageFiles] = get_inf_details(args.inf_file)
+    [data, image_files] = get_inf_details(args.inf_file)
     attempts = 1
     while not check_ad(args) and attempts < 5:
         if attempts > 1:
-            print("Failed Attempt #" + str(attempts) + ", trying again.")
+            print("Failed Attempt #{}, trying again.".format(attempts))
         attempts += 1
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
-        api.post_ad_using_data(data, imageFiles)
-        sleep(180)
+        api.post_ad_using_data(data, image_files)
     if not check_ad(args):
-        print("Failed Attempt #" + str(attempts) + ", giving up.")
+        print("Failed Attempt #{}, giving up.".format(attempts))
 
 
 def show_ads(args):
@@ -111,7 +110,7 @@ def show_ads(args):
     """
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
-    [print("{} '{}'".format(adId, adName)) for adName, adId in api.get_all_ads()]
+    [print("{} '{}'".format(ad_id, ad_name)) for ad_name, ad_id in api.get_all_ads()]
 
 
 def delete_ad(args):
@@ -139,13 +138,13 @@ def repost_ad(args):
     """
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
-    delAdName = ""
+    del_ad_name = ""
     for line in open(args.inf_file, 'rt'):
         [key, val] = line.strip().rstrip("\n").split("=")
         if key == "postAdForm.title":
-            delAdName = val
+            del_ad_name = val
     try:
-        api.delete_ad_using_title(delAdName)
+        api.delete_ad_using_title(del_ad_name)
         print("Existing ad deleted before reposting")
     except kijiji_api.DeleteAdException:
         print("Did not find an existing ad with matching title, skipping ad deletion")
@@ -160,7 +159,7 @@ def repost_folder(args):
     Repost ad from folder
     """
     get_folder_data(args)
-    os.chdir(args.folderName)
+    os.chdir(args.folder_name)
     repost_ad(args)
 
 
@@ -170,13 +169,13 @@ def check_ad(args):
     """
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
-    AdName = ""
+    ad_name = ""
     for line in open(args.inf_file, 'rt'):
         [key, val] = line.strip().rstrip("\n").split("=")
         if key == "postAdForm.title":
-            AdName = val
-    allAds = api.get_all_ads()
-    return [t for t, i in allAds if t == AdName]
+            ad_name = val
+    all_ads = api.get_all_ads()
+    return [t for t, i in all_ads if t == ad_name]
 
 
 def nuke(args):
@@ -185,11 +184,13 @@ def nuke(args):
     """
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
-    allAds = api.get_all_ads()
-    [api.delete_ad(adId) for adName, adId in allAds]
+    all_ads = api.get_all_ads()
+    [api.delete_ad(ad_id) for ad_name, ad_id in all_ads]
 
-def generate_inf_file(args):
+
+def generate_inf_file():
     generator.run_program()
+
 
 if __name__ == "__main__":
     main()
