@@ -188,7 +188,7 @@ def nuke(args):
     [api.delete_ad(ad_id) for ad_name, ad_id in all_ads]
 
 
-def generate_inf_file():
+def generate_inf_file(args):
     generator.run_program()
 
 
