@@ -14,18 +14,17 @@
 
 ### Generating a .inf file for an ad
 - Generate a posting file (item.inf) with the command `python kijiji_repost_headless build_ad` and follow the prompts
-- Place all photo dependancies in the current directory
+- Place all photo dependancies in the path RELATIVE to item.kj_post 
+- It is recommended that you create folders for each item that you wish to post, and include item.kj_post and photos in that directory
 
 ### Posting + Reposting an ad
-Make sure you're in the ROOT directory of the project before proceeding!
+To post item.kj_post:
 
-To post item.inf:
+`python kijiji_repost_headless -u (username) -p (password) post myproduct/item.kj_post`
 
-`python kijiji_repost_headless -u (username) -p (password) post item.inf`
+To repost item.kj_post (will delete the ad if it is already posted prior to posting):
 
-To repost item.inf (will delete the ad if it is already posted prior to posting):
-
-`python kijiji_repost_headless -u (username) -p (password) repost item.inf`
+`python kijiji_repost_headless -u (username) -p (password) repost myproduct/item.kj_post`
 
 To delete all ads:
 
@@ -34,18 +33,6 @@ To delete all ads:
 To delete one ad:
 
 `python kijiji_repost_headless -u (username) -p (password) delete (adId)`
-
-Alternatively, there are also commands for posting/reposting an ad from a folder, which is especially useful for saving you from re-entering your username/password 
-
-Inside your folder, include ALL photos, an `item.inf` ad file, and a `login.inf` file with the first line containing your Kijiji login email and the second line containing your Kijiji login password.
-
-To post from folder:
-
-`python kijiji_repost_headless folder (folderName)`
-
-To repost from folder:
-
-`python kijiji_repost_headless repost_folder (folderName)`
 
 ## Project Structure
 
@@ -57,7 +44,7 @@ project
 │
 └───kijiji_repost_headless
 │   │   kijiji_api.py -> Interfaces with Kijiji
-│   │   generate_inf_file.py -> Makes item.inf
+│   │   generate_post_file.py -> Makes item.kj_post
 │   │   get_ids -> Used for retreiving kijiji location data
 │   │   kijiji_categories_attr.json -> Finds out what properties each item has
 │   │   kijiji_categories_attr.json -> Finds out what properties each item has

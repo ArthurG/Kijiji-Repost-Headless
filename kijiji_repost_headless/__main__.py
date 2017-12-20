@@ -4,13 +4,16 @@ import sys
 from time import sleep
 
 import kijiji_api
-import generate_inf_file as generator
+import generate_post_file as generator
+
+import yaml
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
 
 
 def main():
+    print("Note: A recent update has broken all previously generated .inf files. Please regenerate all your files - this script is not backwards compatible with previous versions. The commands are also changed. See README for details.")
     parser = argparse.ArgumentParser(description="Post ads on Kijiji")
     parser.add_argument('-u', '--username', help='username of your kijiji account')
     parser.add_argument('-p', '--password', help='password of your kijiji account')
@@ -20,14 +23,6 @@ def main():
     post_parser = subparsers.add_parser('post', help='post a new ad')
     post_parser.add_argument('inf_file', type=str, help='.inf file containing posting details')
     post_parser.set_defaults(function=post_ad)
-
-    folder_parser = subparsers.add_parser('folder', help='post ad from folder')
-    folder_parser.add_argument('folder_name', type=str, help='folder containing ad details')
-    folder_parser.set_defaults(function=post_folder)
-
-    repost_folder_parser = subparsers.add_parser('repost_folder', help='post ad from folder')
-    repost_folder_parser.add_argument('folder_name', type=str, help='folder containing ad details')
-    repost_folder_parser.set_defaults(function=repost_folder)
 
     show_parser = subparsers.add_parser('show', help='show currently listed ads')
     show_parser.set_defaults(function=show_ads)
@@ -47,8 +42,8 @@ def main():
     repost_parser.add_argument('inf_file', type=str, help='.inf file containing posting details')
     repost_parser.set_defaults(function=repost_ad)
 
-    build_parser = subparsers.add_parser('build_ad', help='Generates the item.inf file for a new ad')
-    build_parser.set_defaults(function=generate_inf_file)
+    build_parser = subparsers.add_parser('build_ad', help='Generates the item.kj_post file for a new ad')
+    build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
     try:
@@ -56,43 +51,31 @@ def main():
     except AttributeError:
         parser.print_help()
 
+def get_username_if_needed(args, data):
+    if args.username is None or args.password is None:
+        args.username = data["username"]
+        args.password = data["password"]
 
-def get_folder_data(args):
-    """
-    Set ad data inf file and extract login credentials from inf files
-    """
-    args.inf_file = "item.inf"
-    cred_file = args.folder_name + "/login.inf"
-    creds = [line.strip() for line in open(cred_file, 'r')]
-    args.username = creds[0]
-    args.password = creds[1]
-
-
-def get_inf_details(inf_file):
+def get_post_details(inf_file):
     """
     Extract ad data from inf file
     """
     with open(inf_file, 'rt') as infFileLines:
-        data = {key: val for line in infFileLines for (key, val) in (line.strip().split("="),)}
-    files = [open(picture, 'rb').read() for picture in data['imageCsv'].split(",")]
+        #data = {key: val for line in infFileLines for (key, val) in (line.strip().split("="),)}
+        data = yaml.load(infFileLines) 
+        files = [open(os.path.join(os.path.dirname(inf_file), picture), 'rb').read() for picture in data['image_paths']]
     return [data, files]
-
-
-def post_folder(args):
-    """
-    Post new ad from folder
-    """
-    get_folder_data(args)
-    os.chdir(args.folder_name)
-    post_ad(args)
-
 
 def post_ad(args):
     """
     Post new ad
     """
-    [data, image_files] = get_inf_details(args.inf_file)
+    [data, image_files] = get_post_details(args.inf_file)
+    get_username_if_needed(args, data)
     attempts = 1
+    del data["username"]
+    del data["password"]
+
     while not check_ad(args) and attempts < 5:
         if attempts > 1:
             print("Failed Attempt #{}, trying again.".format(attempts))
@@ -136,13 +119,16 @@ def repost_ad(args):
 
     Try to delete ad with same title if possible before reposting new ad
     """
+
+    [data, image_files] = get_post_details(args.inf_file)
+    get_username_if_needed(args, data)
+
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     del_ad_name = ""
-    for line in open(args.inf_file, 'rt'):
-        [key, val] = line.strip().rstrip("\n").split("=")
-        if key == "postAdForm.title":
-            del_ad_name = val
+    for item in data:
+        if item[0] == "postAdForm.title":
+            del_ad_name = item[0]
     try:
         api.delete_ad_using_title(del_ad_name)
         print("Existing ad deleted before reposting")
@@ -153,16 +139,6 @@ def repost_ad(args):
     sleep(180)
     post_ad(args)
 
-
-def repost_folder(args):
-    """
-    Repost ad from folder
-    """
-    get_folder_data(args)
-    os.chdir(args.folder_name)
-    repost_ad(args)
-
-
 def check_ad(args):
     """
     Check if ad is live
@@ -170,10 +146,11 @@ def check_ad(args):
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     ad_name = ""
-    for line in open(args.inf_file, 'rt'):
-        [key, val] = line.strip().rstrip("\n").split("=")
+    [data, image_files] = get_post_details(args.inf_file)
+    for key, val in data.items():
         if key == "postAdForm.title":
             ad_name = val
+
     all_ads = api.get_all_ads()
     return [t for t, i in all_ads if t == ad_name]
 
@@ -188,7 +165,7 @@ def nuke(args):
     [api.delete_ad(ad_id) for ad_name, ad_id in all_ads]
 
 
-def generate_inf_file(args):
+def generate_post_file(args):
     generator.run_program()
 
 

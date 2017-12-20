@@ -3,6 +3,7 @@
 import json
 from operator import itemgetter
 import os
+import yaml
 
 import requests
 
@@ -130,7 +131,7 @@ def get_description():
 
 def run_program():
     print("****************************************************************")
-    print("* Creating the item.inf file. Please answer all the questions. *")
+    print("* Creating the item.kj_post file. Please answer all the questions. *")
     print("****************************************************************\n")
 
     print("Your ad must be submitted in a specific category.")
@@ -146,35 +147,54 @@ def run_program():
         price = input("Ad price in dollars: ")
     print("Ad type:")
     ad = get_enum(adType)
-    photos = input("List of image filenames to upload (comma separated): ")
+    photos = []
+    photos_len = int(input("Specify how many images are there to upload"))
+    for i in range(photos_len):
+        photos.append(input("Specify the relative path of image relative to the .kj_post file {}".format(i+1)))
 
-    f = open('item.inf', 'w')
-    f.write("postAdForm.geocodeLat={}\n".format(addressMap['lat']))
-    f.write("postAdForm.geocodeLng={}\n".format(addressMap['lng']))
-    f.write("postAdForm.city={}\n".format(addressMap['city']))
-    f.write("postAdForm.addressCity={}\n".format(addressMap['city']))
-    f.write("postAdForm.province={}\n".format(addressMap['province']))
-    f.write("postAdForm.addressProvince={}\n".format(addressMap['province']))
-    f.write("postAdForm.postalCode={}\n".format(addressMap['postal_code']))
-    f.write("postAdForm.addressPostalCode={}\n".format(addressMap['postal_code']))
-    f.write("PostalLat={}\n".format(addressMap['lat']))
-    f.write("PostalLng={}\n".format(addressMap['lng']))
-    f.write("categoryId={}\n".format(categoryMap['category']))
-    f.write("postAdForm.adType={}\n".format(ad))
-    f.write("postAdForm.priceType={}\n".format(pmtType))
+    username = input("Kijiji username")
+    password = input("Kijiji password")
+
+    details = {}
+
+    details['postAdForm.geocodeLat'] = addressMap['lat']
+    details['postAdForm.geocodeLng'] = addressMap['lng']
+    details['PostalLat'] = addressMap['lat']
+    details['PostalLng'] = addressMap['lng']
+    details['postAdForm.city'] = addressMap['city']
+    details['postAdForm.addressCity'] = addressMap['city']
+    details['postAdForm.province'] = addressMap['province']
+    details['postAdForm.addressProvince'] = addressMap['province']
+    details['postAdForm.postalCode'] = addressMap['postal_code']
+    details['postAdForm.addressPostalCode'] = addressMap['postal_code']
+    details['categoryId'] = categoryMap['category']
+    details['postAdForm.adType'] = ad
+    details['postAdForm.priceType'] = pmtType
     if pmtType == 'FIXED':
-        f.write("postAdForm.priceAmount={}\n".format(price))
-    [f.write("postAdForm.attributeMap[{}]={}\n".format(attrKey, attrVal)) for attrKey, attrVal in categoryMap.items() if attrKey != "category"]
-    f.write("postAdForm.title={}\n".format(title))
-    f.write("postAdForm.description={}\n".format(description))
-    f.write("postAdForm.locationId={}\n".format(locationId))
-    f.write("locationLevel0={}\n".format(locationArea))
-    f.write("featuresForm.topAdDuration=7\n")
-    f.write("submitType=saveAndCheckout\n")
-    f.write("imageCsv={}\n".format(photos))
+        details["postAdForm.priceAmount"] = price
+    for attrKey, attrVal in categoryMap.items():
+        if attrKey != "category":
+            details["postAdForm.attributeMap[{}]".format(attrKey)] = attrVal
+
+    details["postAdForm.title"]=title
+    details["postAdForm.description"]=description
+    details["postAdForm.locationId"]=locationId
+    details["locationLevel0"]=locationArea
+    details["topAdDuration"]="7"
+    details["submitType"]="saveAndCheckout"
+    details["image_paths"]=photos
+
+    details["username"]=username
+    details["password"]=password
+
+    f = open("item.kj_post", "w")
+    f.write(yaml.dump(details))
     f.close()
 
-    print("item.inf file created. Use this file to post your ad.")
+
+
+
+    print("item.kj_post file created. Use this file to post your ad.")
 
 
 if __name__ == '__main__':
