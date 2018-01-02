@@ -148,12 +148,12 @@ def run_program():
     print("Ad type:")
     ad = get_enum(adType)
     photos = []
-    photos_len = int(input("Specify how many images are there to upload"))
+    photos_len = int(input("Specify how many images are there to upload: "))
     for i in range(photos_len):
-        photos.append(input("Specify the relative path of image relative to the .kj_post file {}".format(i+1)))
+        photos.append(input("Specify the path of image #{} relative to the .kj_post file: ".format(i+1)))
 
-    username = input("Kijiji username")
-    password = input("Kijiji password")
+    username = input("Kijiji username: ")
+    password = input("Kijiji password: ")
 
     details = {}
 
@@ -191,10 +191,7 @@ def run_program():
     f.write(yaml.dump(details))
     f.close()
 
-
-
-
-    print("item.kj_post file created. Use this file to post your ad.")
+    print("\"item.kj_post\" file created. Use this file to post your ad.")
 
 
 if __name__ == '__main__':
