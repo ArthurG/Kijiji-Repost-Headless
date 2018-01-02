@@ -1,4 +1,3 @@
 __pycache__/
-listings/
-*.inf
 /.idea/
+*.kj_post
