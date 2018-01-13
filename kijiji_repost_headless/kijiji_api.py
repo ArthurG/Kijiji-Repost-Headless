@@ -37,7 +37,8 @@ def get_token(html, attrib_name):
     soup = bs4.BeautifulSoup(html, 'html.parser')
     res = soup.select("[name={}]".format(attrib_name))
     if not res:
-        raise KijijiApiException("Element with name attribute '{}' not found in html text.".format(attrib_name), html)
+        print("Element with name attribute '{}' not found in html text.".format(attrib_name))
+        return ""
     return res[0]['value']
 
 
