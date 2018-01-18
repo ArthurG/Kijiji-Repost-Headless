@@ -128,8 +128,8 @@ def repost_ad(args):
     api.login(args.username, args.password)
     del_ad_name = ""
     for item in data:
-        if item[0] == "postAdForm.title":
-            del_ad_name = item[0]
+        if item == "postAdForm.title":
+            del_ad_name = data[item]
     try:
         api.delete_ad_using_title(del_ad_name)
         print("Existing ad deleted before reposting")
