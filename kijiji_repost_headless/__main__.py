@@ -4,8 +4,9 @@ import sys
 from time import sleep
 
 import yaml
-import kijiji_api
+
 import generate_post_file as generator
+import kijiji_api
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -50,6 +51,7 @@ def main():
     except AttributeError:
         parser.print_help()
 
+
 def get_username_if_needed(args, data):
     if args.username is None or args.password is None:
         args.username = data["username"]
@@ -59,10 +61,11 @@ def get_post_details(inf_file):
     """
     Extract ad data from inf file
     """
-    with open(inf_file, 'rt') as f:
+    with open(inf_file, 'r') as f:
         data = yaml.load(f)
         files = [open(os.path.join(os.path.dirname(inf_file), picture), 'rb').read() for picture in data['image_paths']]
     return [data, files]
+
 
 def post_ad(args):
     """
@@ -78,6 +81,7 @@ def post_ad(args):
         if attempts > 1:
             print("Failed Attempt #{}, trying again.".format(attempts))
         attempts += 1
+
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
         api.post_ad_using_data(data, image_files)
@@ -117,8 +121,7 @@ def repost_ad(args):
 
     Try to delete ad with same title if possible before reposting new ad
     """
-
-    [data, image_files] = get_post_details(args.inf_file)
+    [data, _] = get_post_details(args.inf_file)
     get_username_if_needed(args, data)
 
     api = kijiji_api.KijijiApi()
@@ -130,21 +133,24 @@ def repost_ad(args):
     try:
         api.delete_ad_using_title(del_ad_name)
         print("Existing ad deleted before reposting")
-    except kijiji_api.DeleteAdException:
+    except kijiji_api.KijijiApiException:
         print("Did not find an existing ad with matching title, skipping ad deletion")
         pass
+
     # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
     sleep(180)
     post_ad(args)
+
 
 def check_ad(args):
     """
     Check if ad is live
     """
+    [data, _] = get_post_details(args.inf_file)
+
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     ad_name = ""
-    [data, image_files] = get_post_details(args.inf_file)
     for key, val in data.items():
         if key == "postAdForm.title":
             ad_name = val
