@@ -3,10 +3,9 @@ import os
 import sys
 from time import sleep
 
+import yaml
 import kijiji_api
 import generate_post_file as generator
-
-import yaml
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -21,7 +20,7 @@ def main():
     subparsers = parser.add_subparsers(help='sub-command help')
 
     post_parser = subparsers.add_parser('post', help='post a new ad')
-    post_parser.add_argument('inf_file', type=str, help='.inf file containing posting details')
+    post_parser.add_argument('inf_file', type=str, help='.yaml file containing ad details')
     post_parser.set_defaults(function=post_ad)
 
     show_parser = subparsers.add_parser('show', help='show currently listed ads')
@@ -35,14 +34,14 @@ def main():
     nuke_parser.set_defaults(function=nuke)
 
     check_parser = subparsers.add_parser('check_ad', help='check if ad is active')
-    check_parser.add_argument('folder_name', type=str, help='folder containing ad details')
+    check_parser.add_argument('inf_file', type=str, help='.yaml file containing ad details')
     check_parser.set_defaults(function=check_ad)
 
     repost_parser = subparsers.add_parser('repost', help='repost an existing ad')
-    repost_parser.add_argument('inf_file', type=str, help='.inf file containing posting details')
+    repost_parser.add_argument('inf_file', type=str, help='.yaml file containing ad details')
     repost_parser.set_defaults(function=repost_ad)
 
-    build_parser = subparsers.add_parser('build_ad', help='Generates the item.kj_post file for a new ad')
+    build_parser = subparsers.add_parser('build_ad', help='Generates the item.yaml file for a new ad')
     build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
@@ -60,9 +59,8 @@ def get_post_details(inf_file):
     """
     Extract ad data from inf file
     """
-    with open(inf_file, 'rt') as infFileLines:
-        #data = {key: val for line in infFileLines for (key, val) in (line.strip().split("="),)}
-        data = yaml.load(infFileLines) 
+    with open(inf_file, 'rt') as f:
+        data = yaml.load(f)
         files = [open(os.path.join(os.path.dirname(inf_file), picture), 'rb').read() for picture in data['image_paths']]
     return [data, files]
 
