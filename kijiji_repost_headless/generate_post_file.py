@@ -130,9 +130,9 @@ def get_description():
 
 
 def run_program():
-    print("*****************************************************************")
-    print("* Creating the item.yaml file. Please answer all the questions. *")
-    print("*****************************************************************\n")
+    print("****************************************************************")
+    print("* Creating the item.yml file. Please answer all the questions. *")
+    print("****************************************************************\n")
 
     print("Your ad must be submitted in a specific category.")
 
@@ -150,7 +150,7 @@ def run_program():
     photos = []
     photos_len = int(input("Specify how many images are there to upload: "))
     for i in range(photos_len):
-        photos.append(input("Specify the path of image #{} relative to the .yaml file: ".format(i+1)))
+        photos.append(input("Specify the path of image #{} relative to the .yml file: ".format(i+1)))
 
     username = input("Kijiji username: ")
     password = input("Kijiji password: ")
@@ -187,11 +187,11 @@ def run_program():
     details["username"]=username
     details["password"]=password
 
-    f = open("item.yaml", "w")
+    f = open("item.yml", "w")
     f.write(yaml.dump(details))
     f.close()
 
-    print("\"item.yaml\" file created. Use this file to post your ad.")
+    print("\"item.yml\" file created. Use this file to post your ad.")
 
 
 if __name__ == '__main__':

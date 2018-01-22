@@ -21,7 +21,7 @@ def main():
     subparsers = parser.add_subparsers(help='sub-command help')
 
     post_parser = subparsers.add_parser('post', help='post a new ad')
-    post_parser.add_argument('inf_file', type=str, help='.yaml file containing ad details')
+    post_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
     post_parser.set_defaults(function=post_ad)
 
     show_parser = subparsers.add_parser('show', help='show currently listed ads')
@@ -35,14 +35,14 @@ def main():
     nuke_parser.set_defaults(function=nuke)
 
     check_parser = subparsers.add_parser('check_ad', help='check if ad is active')
-    check_parser.add_argument('inf_file', type=str, help='.yaml file containing ad details')
+    check_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
     check_parser.set_defaults(function=check_ad)
 
     repost_parser = subparsers.add_parser('repost', help='repost an existing ad')
-    repost_parser.add_argument('inf_file', type=str, help='.yaml file containing ad details')
+    repost_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
     repost_parser.set_defaults(function=repost_ad)
 
-    build_parser = subparsers.add_parser('build_ad', help='Generates the item.yaml file for a new ad')
+    build_parser = subparsers.add_parser('build_ad', help='Generates the item.yml file for a new ad')
     build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
@@ -57,13 +57,14 @@ def get_username_if_needed(args, data):
         args.username = data["username"]
         args.password = data["password"]
 
-def get_post_details(inf_file):
+
+def get_post_details(ad_file):
     """
     Extract ad data from inf file
     """
-    with open(inf_file, 'r') as f:
+    with open(ad_file, 'r') as f:
         data = yaml.load(f)
-        files = [open(os.path.join(os.path.dirname(inf_file), picture), 'rb').read() for picture in data['image_paths']]
+        files = [open(os.path.join(os.path.dirname(ad_file), picture), 'rb').read() for picture in data['image_paths']]
     return [data, files]
 
 
@@ -71,7 +72,7 @@ def post_ad(args):
     """
     Post new ad
     """
-    [data, image_files] = get_post_details(args.inf_file)
+    [data, image_files] = get_post_details(args.ad_file)
     get_username_if_needed(args, data)
     attempts = 1
     del data["username"]
@@ -121,7 +122,7 @@ def repost_ad(args):
 
     Try to delete ad with same title if possible before reposting new ad
     """
-    [data, _] = get_post_details(args.inf_file)
+    [data, _] = get_post_details(args.ad_file)
     get_username_if_needed(args, data)
 
     api = kijiji_api.KijijiApi()
@@ -146,7 +147,7 @@ def check_ad(args):
     """
     Check if ad is live
     """
-    [data, _] = get_post_details(args.inf_file)
+    [data, _] = get_post_details(args.ad_file)
 
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
