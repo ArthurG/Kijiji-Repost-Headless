@@ -209,11 +209,9 @@ class KijijiApi:
         """
         Return an iterator of tuples containing the ad title and ad ID for every ad
         """
-        resp = self.session.get('https://www.kijiji.ca/m-my-ads.html')
-        user_id = get_kj_data(resp.text)['config']['userId']
-        my_ads_url = 'https://www.kijiji.ca/j-get-my-ads.json?currentOffset=0&show=ACTIVE&user={}'.format(user_id)
-        my_ads_page = self.session.get(my_ads_url)
-        my_ads_tree = json.loads(my_ads_page.text)
-        ad_ids = [entry['id'] for entry in my_ads_tree['myAdEntries']]
-        ad_names = [entry['title'] for entry in my_ads_tree['myAdEntries']]
+        resp = self.session.get('https://www.kijiji.ca/my/ads.json')
+        resp.raise_for_status()
+        ads_json = json.loads(resp.text)
+        ad_ids = [entry['id'] for entry in ads_json['ads'].values()]
+        ad_names = [entry['title'] for entry in ads_json['ads'].values()]
         return zip(ad_names, ad_ids)
