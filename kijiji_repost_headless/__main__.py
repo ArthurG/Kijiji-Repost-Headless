@@ -54,8 +54,8 @@ def main():
 
 def get_username_if_needed(args, data):
     if args.username is None or args.password is None:
-        args.username = data["username"]
-        args.password = data["password"]
+        args.username = data.pop("username", None)
+        args.password = data.pop("password", None)
 
 
 def get_post_details(ad_file):
@@ -74,10 +74,8 @@ def post_ad(args):
     """
     [data, image_files] = get_post_details(args.ad_file)
     get_username_if_needed(args, data)
-    attempts = 1
-    del data["username"]
-    del data["password"]
 
+    attempts = 1
     while not check_ad(args) and attempts < 5:
         if attempts > 1:
             print("Failed Attempt #{}, trying again.".format(attempts))
@@ -148,6 +146,7 @@ def check_ad(args):
     Check if ad is live
     """
     [data, _] = get_post_details(args.ad_file)
+    get_username_if_needed(args, data)
 
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
