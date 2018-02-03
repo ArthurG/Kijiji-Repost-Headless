@@ -54,8 +54,8 @@ def main():
 
 def get_username_if_needed(args, data):
     if args.username is None or args.password is None:
-        args.username = data.pop("username", None)
-        args.password = data.pop("password", None)
+        args.username = data.pop('username', None)
+        args.password = data.pop('password', None)
 
 
 def get_post_details(ad_file):
@@ -64,7 +64,12 @@ def get_post_details(ad_file):
     """
     with open(ad_file, 'r') as f:
         data = yaml.load(f)
-        files = [open(os.path.join(os.path.dirname(ad_file), picture), 'rb').read() for picture in data['image_paths']]
+
+    files = [open(os.path.join(os.path.dirname(ad_file), picture), 'rb').read() for picture in data['image_paths']]
+
+    # Remove image_paths key; it does not need to be sent in the HTTP post request later on
+    del data['image_paths']
+
     return [data, files]
 
 
@@ -78,14 +83,14 @@ def post_ad(args):
     attempts = 1
     while not check_ad(args) and attempts < 5:
         if attempts > 1:
-            print("Failed Attempt #{}, trying again.".format(attempts))
+            print("Failed ad post attempt #{}, trying again.".format(attempts))
         attempts += 1
 
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
         api.post_ad_using_data(data, image_files)
     if not check_ad(args):
-        print("Failed Attempt #{}, giving up.".format(attempts))
+        print("Failed ad post attempt #{}, giving up.".format(attempts))
 
 
 def show_ads(args):
@@ -154,6 +159,7 @@ def check_ad(args):
     for key, val in data.items():
         if key == "postAdForm.title":
             ad_name = val
+            break
 
     all_ads = api.get_all_ads()
     return [t for t, i in all_ads if t == ad_name]
