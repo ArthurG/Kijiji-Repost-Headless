@@ -150,11 +150,11 @@ class KijijiApi:
                 try:
                     image_tree = json.loads(r.text)
                     img_url = image_tree['thumbnailUrl']
-                    print("Image Upload success on try #{}".format(i+1))
+                    print("Image upload success on try #{}".format(i+1))
                     image_urls.append(img_url)
                     break
                 except (KeyError, ValueError):
-                    print("Image Upload failed on try #{}".format(i+1))
+                    print("Image upload failed on try #{}".format(i+1))
         return [image for image in image_urls if image is not None]
 
     def post_ad_using_data(self, data, image_files=[]):
