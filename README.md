@@ -14,17 +14,17 @@
 
 ### Generating a .inf file for an ad
 - Generate a posting file (item.inf) with the command `python kijiji_repost_headless build_ad` and follow the prompts
-- Place all photo dependancies in the path RELATIVE to item.kj_post 
-- It is recommended that you create folders for each item that you wish to post, and include item.kj_post and photos in that directory
+- Place all photo dependancies in the path RELATIVE to item.yml 
+- It is recommended that you create folders for each item that you wish to post, and include item.yml and photos in that directory
 
 ### Posting + Reposting an ad
-To post item.kj_post:
+To post item.yml:
 
-`python kijiji_repost_headless -u (username) -p (password) post myproduct/item.kj_post`
+`python kijiji_repost_headless -u (username) -p (password) post myproduct/item.yml`
 
-To repost item.kj_post (will delete the ad if it is already posted prior to posting):
+To repost item.yml (will delete the ad if it is already posted prior to posting):
 
-`python kijiji_repost_headless -u (username) -p (password) repost myproduct/item.kj_post`
+`python kijiji_repost_headless -u (username) -p (password) repost myproduct/item.yml`
 
 To delete all ads:
 
@@ -44,7 +44,7 @@ project
 │
 └───kijiji_repost_headless
 │   │   kijiji_api.py -> Interfaces with Kijiji
-│   │   generate_post_file.py -> Makes item.kj_post
+│   │   generate_post_file.py -> Makes item.yml
 │   │   get_ids -> Used for retreiving kijiji location data
 │   │   kijiji_categories_attr.json -> Finds out what properties each item has
 │   │   kijiji_categories_attr.json -> Finds out what properties each item has
