@@ -142,6 +142,7 @@ def repost_ad(args):
         pass
 
     # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
+    print("Waiting 3 minutes before posting again. Please do not exit this script.")
     sleep(180)
     post_ad(args)
 
