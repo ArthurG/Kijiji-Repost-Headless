@@ -99,7 +99,14 @@ def show_ads(args):
     """
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
-    [print("{} '{}'".format(ad_id, ad_name)) for ad_name, ad_id in api.get_all_ads()]
+    all_ads = api.get_all_ads()
+    print("    id    ", "page", "views", "          title")
+    [print("{ad_id:10} {rank:4} {views:5} '{title}'".format(
+        ad_id=ad['id'],
+        rank=ad['rank'],
+        views=ad['views'],
+        title=ad['title']
+    )) for ad in all_ads]
 
 
 def delete_ad(args):
@@ -156,24 +163,24 @@ def check_ad(args):
 
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
-    ad_name = ""
+    ad_title = ""
     for key, val in data.items():
         if key == "postAdForm.title":
-            ad_name = val
+            ad_title = val
             break
 
     all_ads = api.get_all_ads()
-    return [t for t, i in all_ads if t == ad_name]
+    return [ad['title'] for ad in all_ads if ad['title'] == ad_title]
 
 
 def nuke(args):
     """
-    Delete all ads
+    Delete all active ads
     """
     api = kijiji_api.KijijiApi()
     api.login(args.username, args.password)
     all_ads = api.get_all_ads()
-    [api.delete_ad(ad_id) for ad_name, ad_id in all_ads]
+    [api.delete_ad(ad['id']) for ad in all_ads]
 
 
 def generate_post_file(args):
