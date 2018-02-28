@@ -133,7 +133,7 @@ class KijijiApi:
         Delete ad based on ad title
         """
         all_ads = self.get_all_ads()
-        [self.delete_ad(i) for t, i in all_ads if t.strip() == title.strip()]
+        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip()]
 
     def upload_image(self, token, image_files=[]):
         """
@@ -207,11 +207,24 @@ class KijijiApi:
 
     def get_all_ads(self):
         """
-        Return an iterator of tuples containing the ad title and ad ID for every ad
+        Return a list of dicts with properties for every active ad
         """
         resp = self.session.get('https://www.kijiji.ca/my/ads.json')
         resp.raise_for_status()
         ads_json = json.loads(resp.text)
-        ad_ids = [entry['id'] for entry in ads_json['ads'].values()]
-        ad_names = [entry['title'] for entry in ads_json['ads'].values()]
-        return zip(ad_names, ad_ids)
+        ads_info = ads_json['ads']
+
+        # Get rank (ie. page number) for each ad
+        # Construct url in the form of "https://www.kijiji.ca/my/ranks?ids=<ad_id1>&ids=<ad_id2>&..."
+        # where each ad ID given returns its page rank
+        query_str = "&".join("ids={}".format(ad_id) for ad_id in [ad['id'] for ad in ads_info.values()])
+        ad_rank_url = "https://www.kijiji.ca/my/ranks?{}".format(query_str)
+        resp = self.session.get(ad_rank_url)
+        resp.raise_for_status()
+        ranks_json = json.loads(resp.text)
+
+        # Add ranks to existing ad properties dict
+        for ad_id, rank in ranks_json['ranks'].items():
+            ads_info[ad_id]['rank'] = rank
+
+        return [ad for ad in ads_info.values()]
