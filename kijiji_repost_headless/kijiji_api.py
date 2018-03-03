@@ -215,11 +215,10 @@ class KijijiApi:
         ads_info = ads_json['ads']
 
         # Get rank (ie. page number) for each ad
-        # Construct url in the form of "https://www.kijiji.ca/my/ranks?ids=<ad_id1>&ids=<ad_id2>&..."
-        # where each ad ID given returns its page rank
-        query_str = "&".join("ids={}".format(ad_id) for ad_id in [ad['id'] for ad in ads_info.values()])
-        ad_rank_url = "https://www.kijiji.ca/my/ranks?{}".format(query_str)
-        resp = self.session.get(ad_rank_url)
+        # Can't use dict comprehension for building params because every key has the same name,
+        # must use a list of key-value tuples instead
+        params = [("ids", ad['id']) for ad in ads_info.values()]
+        resp = self.session.get('https://www.kijiji.ca/my/ranks', params=params)
         resp.raise_for_status()
         ranks_json = json.loads(resp.text)
 
