@@ -214,16 +214,17 @@ class KijijiApi:
         ads_json = json.loads(resp.text)
         ads_info = ads_json['ads']
 
-        # Get rank (ie. page number) for each ad
-        # Can't use dict comprehension for building params because every key has the same name,
-        # must use a list of key-value tuples instead
-        params = [("ids", ad['id']) for ad in ads_info.values()]
-        resp = self.session.get('https://www.kijiji.ca/my/ranks', params=params)
-        resp.raise_for_status()
-        ranks_json = json.loads(resp.text)
+        if ads_info:
+            # Get rank (ie. page number) for each ad
+            # Can't use dict comprehension for building params because every key has the same name,
+            # must use a list of key-value tuples instead
+            params = [("ids", ad['id']) for ad in ads_info.values()]
+            resp = self.session.get('https://www.kijiji.ca/my/ranks', params=params)
+            resp.raise_for_status()
+            ranks_json = json.loads(resp.text)
 
-        # Add ranks to existing ad properties dict
-        for ad_id, rank in ranks_json['ranks'].items():
-            ads_info[ad_id]['rank'] = rank
+            # Add ranks to existing ad properties dict
+            for ad_id, rank in ranks_json['ranks'].items():
+                ads_info[ad_id]['rank'] = rank
 
         return [ad for ad in ads_info.values()]
