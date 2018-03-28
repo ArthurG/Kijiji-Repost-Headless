@@ -1,38 +1,46 @@
 # Kijiji Repost Headless
 
-#### Send  POST requests to Kijiji... to post your ads
+#### Post ads on Kijiji
 
 ## Setup
-- This project requires python3 with: python-requests, bs4
-- Run `pip3 install -r requirements.txt`
+
+- This project requires python3 with: python-requests, bs4, pyyaml
+- Run `pip3 install -r requirements.txt` to install all dependencies
 
 ## Requirements
+
 - The program currently requires that you post at LEAST one photo
 - As per Kijiji requirements, the item description must be at least 10 characters
 
 ## Usage
 
-### Generating a .inf file for an ad
-- Generate a posting file (item.inf) with the command `python kijiji_repost_headless build_ad` and follow the prompts
-- Place all photo dependancies in the path RELATIVE to item.yml 
-- It is recommended that you create folders for each item that you wish to post, and include item.yml and photos in that directory
+### Generating an ad posting file
 
-### Posting + Reposting an ad
-To post item.yml:
+- Generate a posting file (item.yml) with the command `python kijiji_repost_headless build_ad` and follow the prompts
+- Place all photo dependencies in the path RELATIVE to item.yml 
+- It is recommended that you create separate folders for each ad that you wish to post and include item.yml and photos in the same directory
 
-`python kijiji_repost_headless -u (username) -p (password) post myproduct/item.yml`
+### Posting and Reposting an ad
 
-To repost item.yml (will delete the ad if it is already posted prior to posting):
+Post one ad (item.yml):
 
-`python kijiji_repost_headless -u (username) -p (password) repost myproduct/item.yml`
+`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] post myproduct/item.yml`
 
-To delete all ads:
+Repost one ad (item.yml); will delete the ad prior to posting if it already exists:
 
-`python  kijiji_repost_headless -u (username) -p (password) nuke`
+`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] repost myproduct/item.yml`
 
-To delete one ad:
+Show all active ads:
 
-`python kijiji_repost_headless -u (username) -p (password) delete (adId)`
+`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] show`
+
+Delete all ads:
+
+`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] nuke`
+
+Delete one ad (using ad id):
+
+`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] delete myAdId`
 
 ## Project Structure
 
@@ -40,7 +48,7 @@ To delete one ad:
 project
 │   README.md
 │   LICENSE
-│   requirements.txt    
+│   requirements.txt
 │
 └───kijiji_repost_headless
 │   │   kijiji_api.py -> Interfaces with Kijiji
@@ -55,9 +63,11 @@ project
 ```
 
 ## Issues
+
 Please open a GitHub issue or pull request if you discover problems.
 
 ## TODO
-- Error handling -> automatically send bugs + logs to developer
+
+- Better error handling
 - Avoid reuploading the same pictures again and again
 
