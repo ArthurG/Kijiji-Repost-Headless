@@ -4,7 +4,7 @@ import requests
 
 def find_where(d, area_id=None):
     """
-    :param d: dictionnary available here: http://www.kijiji.ca/j-locations.json
+    :param d: dictionary available here: http://www.kijiji.ca/j-locations.json
     :param area_id: string, parent's region's ID 
     :return: tuple, containing the location id and area id of the selected_dict region 
     """
@@ -25,7 +25,7 @@ def find_where(d, area_id=None):
                 break
         print("Enter a valid number!")
 
-    # if the selected dictionnary has children, we list it again
+    # if the selected dictionary has children, we list it again
     if len(selected_dict['children']) > 0:
         return find_where(selected_dict, selected_dict['id'])
 
@@ -33,7 +33,7 @@ def find_where(d, area_id=None):
     print("Here's your location ID:", selected_dict['id'])
     print("And your location area:", area_id)
 
-    return (selected_dict['id'], area_id)
+    return selected_dict['id'], area_id
 
 
 def get_location_and_area_ids():
