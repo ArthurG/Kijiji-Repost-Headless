@@ -19,8 +19,8 @@ class KijijiApiException(Exception):
         self.msg = msg
         self.dumpfilepath = ""
         if dump:
-            self.dumpfilepath = "kijijiapi_dump_{}.txt".format(strftime("%Y%m%dT%H%M%S"))
-            with open(self.dumpfilepath, 'a') as f:
+            self.dumpfilepath = "kijijiapi_dump_{}.html".format(strftime("%Y%m%dT%H%M%S"))
+            with open(self.dumpfilepath, 'a', encoding='utf-8') as f:
                 f.write(dump)
 
     def __str__(self):
