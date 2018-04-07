@@ -224,8 +224,9 @@ def run_program():
     for i in range(photos_len):
         photos.append(input("Specify the path of image #{} relative to the .yml file: ".format(i+1)))
 
-    username = input("Kijiji username: ")
-    password = input("Kijiji password: ")
+    username = input("Kijiji username (leave empty to not include): ")
+    if username:
+        password = input("Kijiji password: ")
 
     details = OrderedDict()
     details['postAdForm.adType'] = ad
@@ -253,8 +254,9 @@ def run_program():
     if pmt_type == 'FIXED':
         details['postAdForm.priceAmount'] = price
     details['image_paths'] = photos
-    details['username'] = username
-    details['password'] = password
+    if username and password:
+        details['username'] = username
+        details['password'] = password
 
     f = open(ad_file_name, 'w')
     f.write(yaml.dump(details))
