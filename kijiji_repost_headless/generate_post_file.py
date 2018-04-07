@@ -2,6 +2,7 @@
 
 import json
 import os
+from collections import OrderedDict
 from operator import itemgetter
 
 import requests
@@ -12,6 +13,18 @@ from get_ids import get_location_and_area_ids
 ad_file_name = 'item.yml'
 ad_type = ['OFFER', 'WANTED']
 price_type = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
+
+
+def represent_ordereddict(dumper, data):
+    value = []
+    for item_key, item_value in data.items():
+        node_key = dumper.represent_data(item_key)
+        node_value = dumper.represent_data(item_value)
+        value.append((node_key, node_value))
+    return yaml.nodes.MappingNode(u'tag:yaml.org,2002:map', value)
+
+
+yaml.add_representer(OrderedDict, represent_ordereddict)
 
 
 # Dictionary w/ postal_code, lat, lng, city, province
@@ -214,35 +227,32 @@ def run_program():
     username = input("Kijiji username: ")
     password = input("Kijiji password: ")
 
-    details = {}
-
-    details['postAdForm.geocodeLat'] = address_map['lat']
-    details['postAdForm.geocodeLng'] = address_map['lng']
-    details['PostalLat'] = address_map['lat']
-    details['PostalLng'] = address_map['lng']
-    details['postAdForm.city'] = address_map['city']
-    details['postAdForm.addressCity'] = address_map['city']
-    details['postAdForm.province'] = address_map['province']
-    details['postAdForm.addressProvince'] = address_map['province']
-    details['postAdForm.postalCode'] = address_map['postal_code']
-    details['postAdForm.addressPostalCode'] = address_map['postal_code']
-    details['categoryId'] = category_map['category']
+    details = OrderedDict()
     details['postAdForm.adType'] = ad
-    details['postAdForm.priceType'] = pmt_type
-    if pmt_type == 'FIXED':
-        details['postAdForm.priceAmount'] = price
     for attrKey, attrVal in category_map.items():
         if attrKey != 'category':
             details["postAdForm.attributeMap[{}]".format(attrKey)] = attrVal
-
-    details['postAdForm.title'] = title
-    details['postAdForm.description'] = description
+    details['postAdForm.priceType'] = pmt_type
+    details['postAdForm.city'] = address_map['city']
+    details['postAdForm.province'] = address_map['province']
+    details['postAdForm.postalCode'] = address_map['postal_code']
+    details['postAdForm.addressCity'] = address_map['city']
+    details['postAdForm.addressProvince'] = address_map['province']
+    details['postAdForm.addressPostalCode'] = address_map['postal_code']
+    details['postAdForm.geocodeLat'] = address_map['lat']
+    details['postAdForm.geocodeLng'] = address_map['lng']
     details['postAdForm.locationId'] = location_id
+    details['PostalLat'] = address_map['lat']
+    details['PostalLng'] = address_map['lng']
     details['locationLevel0'] = location_area
     details['topAdDuration'] = "7"
     details['submitType'] = "saveAndCheckout"
+    details['postAdForm.title'] = title
+    details['postAdForm.description'] = description
+    details['categoryId'] = category_map['category']
+    if pmt_type == 'FIXED':
+        details['postAdForm.priceAmount'] = price
     details['image_paths'] = photos
-
     details['username'] = username
     details['password'] = password
 
