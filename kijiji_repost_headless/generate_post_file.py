@@ -1,36 +1,97 @@
 # TODO: Actual error handling
 
 import json
-from operator import itemgetter
 import os
-import yaml
+from operator import itemgetter
 
 import requests
+import yaml
 
 from get_ids import get_location_and_area_ids
 
-
-adType = ['OFFER', 'WANTED']
-priceType = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
+ad_file_name = 'item.yml'
+ad_type = ['OFFER', 'WANTED']
+price_type = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 
 
 # Dictionary w/ postal_code, lat, lng, city, province
 def get_address_map():
     address = input("Your address: ")
-    data = {'address': address}
-    endpoint = 'https://maps.googleapis.com/maps/api/geocode/json'
-    resp = requests.get(endpoint, params=data)
+    resp = requests.get('https://maps.googleapis.com/maps/api/geocode/json', params={'address': address})
+    resp.raise_for_status()
+
+    latlng_json = json.loads(resp.text)
+    if latlng_json['status'] == 'ZERO_RESULTS':
+        print("Found no results! Try again.")
+        print()  # Empty line
+        return None  # Restart
+    elif latlng_json['status'] != 'OK':
+        # Any other non-OK status
+        if 'error_message' in latlng_json:
+            print("Maps API error: {}".format(latlng_json['error_message']))
+        print()  # Empty line
+        return None  # Restart
+
+    results = latlng_json['results']
+    if len(results) > 1:
+        # Multiple results, prompt for choice
+        for i, result in enumerate(sorted(results, key=itemgetter('formatted_address'))):
+            print("{:>2d} - {}".format(i + 1, result['formatted_address']))
+
+        while True:
+            response = input("Select a result from the list above (choose number) [To restart, enter 0]: ")
+            if response == "0":
+                print()  # Empty line
+                return None  # Restart
+            if response.isdigit():
+                if 0 < int(response) <= len(results):
+                    chosen_result = sorted(results, key=itemgetter('formatted_address'))[int(response) - 1]
+                    break
+            print("Enter a valid number!")
+    else:
+        # Must only be one result, don't prompt for choice
+        # No results case was already handled above by checking 'status' field of Google maps API response
+        chosen_result = results[0]
+        print("Found one result: {}".format(chosen_result['formatted_address']))
+
+    try:
+        latlng = chosen_result['geometry']['location']
+    except KeyError:
+        print("Geolocation data is missing! Try again.")
+        print()  # Empty line
+        return None  # Restart
+
+    try:
+        postal_code = [item for item in chosen_result['address_components'] if
+                       'postal_code' in item['types']][0]['short_name']
+    except (IndexError, KeyError):
+        print("Address is too vague; postal code is missing! Try again...")
+        print()  # Empty line
+        return None  # Restart
+
+    try:
+        city = [item for item in chosen_result['address_components'] if
+                'administrative_area_level_3' in item['types'] or 'locality' in item['types']][0]['short_name']
+    except (IndexError, KeyError):
+        print("Address is too vague; city is missing! Try again.")
+        print()  # Empty line
+        return None  # Restart
+
+    try:
+        province = [item for item in chosen_result['address_components'] if
+                    'administrative_area_level_1' in item['types']][0]['short_name']
+    except (IndexError, KeyError):
+        print("Address is too vague; province is missing! Try again.")
+        print()  # Empty line
+        return None  # Restart
 
     ans = {}
-    latlng = json.loads(resp.text)['results'][0]['geometry']['location']
     ans['lat'] = str(latlng['lat'])
     ans['lng'] = str(latlng['lng'])
-    postalCode = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "postal_code" in item['types'] ][0]['short_name']
-    city = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "administrative_area_level_3" in item['types'] or "locality" in item['types'] ][0]['short_name']
-    province = [item for item in json.loads(resp.text)['results'][0]['address_components'] if "administrative_area_level_1" in item['types'] ][0]['short_name']
-    ans['postal_code'] = postalCode
+    ans['postal_code'] = postal_code
     ans['city'] = city
     ans['province'] = province
+
     return ans
 
 
@@ -38,7 +99,7 @@ def get_enum(array):
     for i, item in enumerate(array):
         print("{:>2d} - {}".format(i+1, item))
     response = int(input("Choose one: "))
-    return array[response-1]
+    return array[response - 1]
 
 
 def restart_function(func):
@@ -48,7 +109,7 @@ def restart_function(func):
     """
     while True:
         returned_value = func()
-        if returned_value == None:
+        if returned_value is None:
             continue
         else:
             break
@@ -57,8 +118,6 @@ def restart_function(func):
 
 # {'category': catId, 'attirbute: 'attrid', 'attribute': 'attrid''}}
 def pick_category():
-    ans = {}
-
     filename = os.path.join(os.path.dirname(__file__), 'kijiji_categories_attrs.json')
     kijiji_categories_and_attributes = json.load(open(filename, 'r'))
 
@@ -73,34 +132,34 @@ def pick_category():
     for i, cat in enumerate(sorted(possible_categories, key=itemgetter('category_name'))):
         print("{:>2d} - {}".format(i + 1, cat['category_name']))
 
-    # make sure the input is a number and a valid index
+    # Make sure the input is a number and a valid index
     while True:
         response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
         if response == "0":
-            print()  # empty line
-            return None  # this will restart pick_category
+            print()  # Empty line
+            return None  # Restart
         if response.isdigit():
             if 0 < int(response) <= len(possible_categories):
-                selectedCategory = sorted(possible_categories, key=itemgetter('category_name'))[int(response) - 1]
+                selected_category = sorted(possible_categories, key=itemgetter('category_name'))[int(response) - 1]
                 break
         print("Enter a valid number!")
 
-    ans['category'] = selectedCategory['category_id']
+    ans = {}
+    ans['category'] = selected_category['category_id']
 
-    for attribute in selectedCategory['attributes']:
-        if (attribute['attribute_options'] == None):
-            ans[attribute['attribute_id']] = input("Enter a value related to {}: ".format(attribute['attribute_name']))
+    for attribute in selected_category['attributes']:
+        if attribute['attribute_options'] is None:
+            ans[attribute['attribute_id']] = input("Enter a value related to \"{}\": ".format(attribute['attribute_name']))
         else:
-            for i, attrValue in enumerate(attribute['attribute_options']):
-                print(i + 1, attrValue['option_name'])
+            for i, attr_value in enumerate(attribute['attribute_options']):
+                print(i + 1, attr_value['option_name'])
 
-            # make sure the input is a number and a valid index
+            # Make sure the input is a number and a valid index
             while True:
-                response = input("Choose most relevant category relating to " + attribute[
-                    'attribute_name'] + " [To restart, enter 0] : ")
+                response = input("Choose most relevant category relating to \"{}\" [To restart, enter 0]: ".format(attribute['attribute_name']))
                 if response == "0":
-                    print()  # empty line
-                    return None  # this will restart pick_category
+                    print()  # Empty line
+                    return None  # Restart
                 if response.isdigit():
                     if 0 < int(response) <= len(attribute['attribute_options']):
                         ans[attribute['attribute_id']] = attribute['attribute_options'][int(response) - 1]['option_id']
@@ -136,17 +195,17 @@ def run_program():
 
     print("Your ad must be submitted in a specific category.")
 
-    categoryMap = restart_function(pick_category)
-    addressMap = get_address_map()
-    locationId, locationArea = get_location_and_area_ids()  # returns a tuple containing the location ID and area ID
+    category_map = restart_function(pick_category)
+    address_map = restart_function(get_address_map)
+    location_id, location_area = get_location_and_area_ids()  # Returns a tuple containing location ID and area ID
     title = input("Ad title: ")
     description = get_description()
     print("Ad price type:")
-    pmtType = get_enum(priceType)
-    if pmtType == 'FIXED':
+    pmt_type = get_enum(price_type)
+    if pmt_type == 'FIXED':
         price = input("Ad price in dollars: ")
     print("Ad type:")
-    ad = get_enum(adType)
+    ad = get_enum(ad_type)
     photos = []
     photos_len = int(input("Specify how many images are there to upload: "))
     for i in range(photos_len):
@@ -157,42 +216,42 @@ def run_program():
 
     details = {}
 
-    details['postAdForm.geocodeLat'] = addressMap['lat']
-    details['postAdForm.geocodeLng'] = addressMap['lng']
-    details['PostalLat'] = addressMap['lat']
-    details['PostalLng'] = addressMap['lng']
-    details['postAdForm.city'] = addressMap['city']
-    details['postAdForm.addressCity'] = addressMap['city']
-    details['postAdForm.province'] = addressMap['province']
-    details['postAdForm.addressProvince'] = addressMap['province']
-    details['postAdForm.postalCode'] = addressMap['postal_code']
-    details['postAdForm.addressPostalCode'] = addressMap['postal_code']
-    details['categoryId'] = categoryMap['category']
+    details['postAdForm.geocodeLat'] = address_map['lat']
+    details['postAdForm.geocodeLng'] = address_map['lng']
+    details['PostalLat'] = address_map['lat']
+    details['PostalLng'] = address_map['lng']
+    details['postAdForm.city'] = address_map['city']
+    details['postAdForm.addressCity'] = address_map['city']
+    details['postAdForm.province'] = address_map['province']
+    details['postAdForm.addressProvince'] = address_map['province']
+    details['postAdForm.postalCode'] = address_map['postal_code']
+    details['postAdForm.addressPostalCode'] = address_map['postal_code']
+    details['categoryId'] = category_map['category']
     details['postAdForm.adType'] = ad
-    details['postAdForm.priceType'] = pmtType
-    if pmtType == 'FIXED':
-        details["postAdForm.priceAmount"] = price
-    for attrKey, attrVal in categoryMap.items():
-        if attrKey != "category":
+    details['postAdForm.priceType'] = pmt_type
+    if pmt_type == 'FIXED':
+        details['postAdForm.priceAmount'] = price
+    for attrKey, attrVal in category_map.items():
+        if attrKey != 'category':
             details["postAdForm.attributeMap[{}]".format(attrKey)] = attrVal
 
-    details["postAdForm.title"]=title
-    details["postAdForm.description"]=description
-    details["postAdForm.locationId"]=locationId
-    details["locationLevel0"]=locationArea
-    details["topAdDuration"]="7"
-    details["submitType"]="saveAndCheckout"
-    details["image_paths"]=photos
+    details['postAdForm.title'] = title
+    details['postAdForm.description'] = description
+    details['postAdForm.locationId'] = location_id
+    details['locationLevel0'] = location_area
+    details['topAdDuration'] = "7"
+    details['submitType'] = "saveAndCheckout"
+    details['image_paths'] = photos
 
-    details["username"]=username
-    details["password"]=password
+    details['username'] = username
+    details['password'] = password
 
-    f = open("item.yml", "w")
+    f = open(ad_file_name, 'w')
     f.write(yaml.dump(details))
     f.close()
 
-    print("\"item.yml\" file created. Use this file to post your ad.")
+    print("\"{}\" file created. Use this file to post your ad.".format(ad_file_name))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_program()
