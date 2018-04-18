@@ -164,19 +164,32 @@ class KijijiApi:
         'data' is a dictionary of ad data that to be posted
         'image_files' is a list of binary objects corresponding to images to upload
         """
-        # Load ad posting page (arbitrary category)
-        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=15')
+        
+        image_list = []
+        session_attempt_count = 0
+        session_attempt_max = 3
+        
+        while len(image_list) <1:
+            if session_attempt_count >= session_attempt_max:
+                break
+                
+            session_attempt_count += 1
+            print("Attempting Image upload sequence with a new session, try #{}".format(session_attempt_count))
 
-        # Get token required for upload
-        m = re.search(r"initialXsrfToken: '(\S+)'", resp.text)
-        if m:
-            image_upload_token = m.group(1)
-        else:
-            raise KijijiApiException("'initialXsrfToken' not found in html text.", resp.text)
+            # Load ad posting page (arbitrary category)
+            resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=15')
 
-        # Upload the images
-        image_list = self.upload_image(image_upload_token, image_files)
+            # Get token required for upload
+            m = re.search(r"initialXsrfToken: '(\S+)'", resp.text)
+            if m:
+                image_upload_token = m.group(1)
+            else:
+                raise KijijiApiException("'initialXsrfToken' not found in html text.", resp.text)
+
+            # Upload the images
+            image_list = self.upload_image(image_upload_token, image_files)
         data['images'] = ",".join(image_list)
+         
 
         # Retrieve XSRF tokens
         data['ca.kijiji.xsrf.token'] = get_token(resp.text, 'ca.kijiji.xsrf.token')
