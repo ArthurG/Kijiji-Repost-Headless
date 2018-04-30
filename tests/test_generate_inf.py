@@ -1,6 +1,6 @@
 from unittest import TestCase, mock
 
-from kijiji_repost_headless.generate_inf_file import get_description
+from kijiji_repost_headless.generate_post_file import get_description
 
 
 class TestsGenerateInfFile(TestCase):

@@ -8,8 +8,6 @@ from operator import itemgetter
 import requests
 import yaml
 
-from get_ids import get_location_and_area_ids
-
 ad_file_name = 'item.yml'
 ad_type = ['OFFER', 'WANTED']
 price_type = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
