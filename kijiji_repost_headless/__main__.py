@@ -58,7 +58,7 @@ def get_username_if_needed(args, data):
         args.password = data.pop('password', None)
 
 
-def get_post_details(ad_file):
+def get_post_details(ad_file, api=None):
     """
     Extract ad data from inf file
     """
@@ -73,7 +73,7 @@ def get_post_details(ad_file):
     return [data, files]
 
 
-def post_ad(args):
+def post_ad(args, api=None):
     """
     Post new ad
     """
@@ -86,19 +86,21 @@ def post_ad(args):
             print("Failed ad post attempt #{}, trying again.".format(attempts))
         attempts += 1
 
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
+        if not api:
+            api = kijiji_api.KijijiApi()
+            api.login(args.username, args.password)
         api.post_ad_using_data(data, image_files)
     if not check_ad(args):
         print("Failed ad post attempt #{}, giving up.".format(attempts))
 
 
-def show_ads(args):
+def show_ads(args, api=None):
     """
     Print list of all ads
     """
-    api = kijiji_api.KijijiApi()
-    api.login(args.username, args.password)
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
     all_ads = api.get_all_ads()
     print("    id    ", "page", "views", "          title")
     [print("{ad_id:10} {rank:4} {views:5} '{title}'".format(
@@ -109,24 +111,17 @@ def show_ads(args):
     )) for ad in all_ads]
 
 
-def delete_ad(args):
+def delete_ad(args, api=None):
     """
     Delete ad
     """
-    api = kijiji_api.KijijiApi()
-    api.login(args.username, args.password)
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
     api.delete_ad(args.id)
 
 
-def delete_ad_using_title(name):
-    """
-    Delete ad based on ad title
-    """
-    api = kijiji_api.KijijiApi()
-    api.delete_ad_using_title(name)
-
-
-def repost_ad(args):
+def repost_ad(args, api=None):
     """
     Repost ad
 
@@ -135,8 +130,10 @@ def repost_ad(args):
     [data, _] = get_post_details(args.ad_file)
     get_username_if_needed(args, data)
 
-    api = kijiji_api.KijijiApi()
-    api.login(args.username, args.password)
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
+
     del_ad_name = ""
     for item in data:
         if item == "postAdForm.title":
@@ -154,15 +151,17 @@ def repost_ad(args):
     post_ad(args)
 
 
-def check_ad(args):
+def check_ad(args, api=None):
     """
     Check if ad is live
     """
     [data, _] = get_post_details(args.ad_file)
-    get_username_if_needed(args, data)
 
-    api = kijiji_api.KijijiApi()
-    api.login(args.username, args.password)
+    if not api:
+        get_username_if_needed(args, data)
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
+
     ad_title = ""
     for key, val in data.items():
         if key == "postAdForm.title":
@@ -173,12 +172,13 @@ def check_ad(args):
     return [ad['title'] for ad in all_ads if ad['title'] == ad_title]
 
 
-def nuke(args):
+def nuke(args, api=None):
     """
     Delete all active ads
     """
-    api = kijiji_api.KijijiApi()
-    api.login(args.username, args.password)
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
     all_ads = api.get_all_ads()
     [api.delete_ad(ad['id']) for ad in all_ads]
 
