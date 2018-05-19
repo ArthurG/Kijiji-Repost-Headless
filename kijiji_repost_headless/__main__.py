@@ -26,6 +26,8 @@ def main():
 
     show_parser = subparsers.add_parser('show', help='show currently listed ads')
     show_parser.set_defaults(function=show_ads)
+    show_parser.add_argument('-k', '--key', dest='sort_key', default='title', choices=['id', 'title', 'rank', 'views'], help="sort ad list by key")
+    show_parser.add_argument('-r', '--reverse', action='store_true', dest='sort_reverse', help='reverse sort order')
 
     delete_parser = subparsers.add_parser('delete', help='delete a listed ad')
     delete_parser.add_argument('id', type=str, help='id of the ad you wish to delete')
@@ -42,7 +44,7 @@ def main():
     repost_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
     repost_parser.set_defaults(function=repost_ad)
 
-    build_parser = subparsers.add_parser('build_ad', help='Generates the item.yml file for a new ad')
+    build_parser = subparsers.add_parser('build_ad', help='generates the item.yml file for a new ad')
     build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
@@ -101,7 +103,8 @@ def show_ads(args, api=None):
     if not api:
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
-    all_ads = api.get_all_ads()
+    all_ads = sorted(api.get_all_ads(), key=lambda k: k[args.sort_key], reverse=args.sort_reverse)
+
     print("    id    ", "page", "views", "          title")
     [print("{ad_id:10} {rank:4} {views:5} '{title}'".format(
         ad_id=ad['id'],
