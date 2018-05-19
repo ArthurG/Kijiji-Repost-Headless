@@ -26,7 +26,7 @@ def main():
 
     show_parser = subparsers.add_parser('show', help='show currently listed ads')
     show_parser.set_defaults(function=show_ads)
-    show_parser.add_argument('-k', '--key', dest='sort_key', help="sort list by key: 'id', 'title', 'page', or 'views'")
+    show_parser.add_argument('-k', '--key', dest='sort_key', default='title', choices=['id', 'title', 'rank', 'views'], help="sort ad list by key")
     show_parser.add_argument('-r', '--reverse', action='store_true', dest='sort_reverse', help='reverse sort order')
 
     delete_parser = subparsers.add_parser('delete', help='delete a listed ad')
@@ -48,11 +48,6 @@ def main():
     build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
-
-    # Sort reverse argument is mutually inclusive with sort key argument
-    if args.sort_reverse and args.sort_key is None:
-        parser.error("sort reverse argument (-r, --reverse) requires a sort key argument (-k, --key)")
-
     try:
         args.function(args)
     except AttributeError:
@@ -108,23 +103,7 @@ def show_ads(args, api=None):
     if not api:
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
-    all_ads = api.get_all_ads()
-
-    # Sort list of ads if a sort key was given
-    if args.sort_key:
-        key = args.sort_key
-        if key.lower() == 'id':
-            sort_key = 'id'
-        elif key.lower() == 'title' or key.lower() == 'name':
-            sort_key = 'title'
-        elif key.lower().startswith('rank') or key.lower().startswith('page'):
-            sort_key = 'rank'
-        elif key.lower().startswith('view'):
-            sort_key = 'views'
-        else:
-            print("Sort key '{}' is not valid!".format(key))
-            return
-        all_ads = sorted(all_ads, key=lambda k: k[sort_key], reverse=args.sort_reverse)
+    all_ads = sorted(api.get_all_ads(), key=lambda k: k[args.sort_key], reverse=args.sort_reverse)
 
     print("    id    ", "page", "views", "          title")
     [print("{ad_id:10} {rank:4} {views:5} '{title}'".format(
