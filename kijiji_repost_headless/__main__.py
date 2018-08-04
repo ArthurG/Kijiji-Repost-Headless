@@ -13,7 +13,6 @@ if sys.version_info < (3, 0):
 
 
 def main():
-    print("Note: A recent update has broken all previously generated .inf files. Please regenerate all your files - this script is not backwards compatible with previous versions. The commands are also changed. See README for details.")
     parser = argparse.ArgumentParser(description="Post ads on Kijiji")
     parser.add_argument('-u', '--username', help='username of your kijiji account')
     parser.add_argument('-p', '--password', help='password of your kijiji account')
