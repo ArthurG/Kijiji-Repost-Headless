@@ -161,21 +161,23 @@ def pick_category():
     ans['category'] = selected_category['category_id']
 
     for attribute in selected_category['attributes']:
-        if attribute['attribute_options'] is None:
-            ans[attribute['attribute_id']] = input("Enter a value related to \"{}\": ".format(attribute['attribute_name']))
+        if attribute['attribute_type'] == "input":
+            ans[attribute['attribute_name']] = input("Enter a value related to \"{}\": ".format(attribute['attribute_human_readable']))
         else:
             for i, attr_value in enumerate(attribute['attribute_options']):
-                print(i + 1, attr_value['option_name'])
+                print(i + 1, attr_value['option_human_readable'])
 
             # Make sure the input is a number and a valid index
             while True:
-                response = input("Choose most relevant category relating to \"{}\" [To restart, enter 0]: ".format(attribute['attribute_name']))
+                response = input("Choose most relevant category relating to \"{}\". [To skip, enter 'skip'] [To restart, enter 0]: ".format(attribute['attribute_human_readable']))
+                if response == "skip":
+                    break
                 if response == "0":
                     print()  # Empty line
                     return None  # Restart
                 if response.isdigit():
                     if 0 < int(response) <= len(attribute['attribute_options']):
-                        ans[attribute['attribute_id']] = attribute['attribute_options'][int(response) - 1]['option_id']
+                        ans[attribute['attribute_name']] = attribute['attribute_options'][int(response) - 1]['option_name']
                         break
                 print("Enter a valid number!")
 
@@ -211,14 +213,8 @@ def run_program():
     category_map = restart_function(pick_category)
     address_map = restart_function(get_address_map)
     location_id, location_area = get_location_and_area_ids()  # Returns a tuple containing location ID and area ID
-    title = input("Ad title: ")
     description = get_description()
-    print("Ad price type:")
-    pmt_type = get_enum(price_type)
-    if pmt_type == 'FIXED':
-        price = input("Ad price in dollars: ")
     print("Ad type:")
-    ad = get_enum(ad_type)
     photos = []
     photos_len = int(input("Specify how many images are there to upload: "))
     for i in range(photos_len):
@@ -229,11 +225,9 @@ def run_program():
         password = input("Kijiji password: ")
 
     details = OrderedDict()
-    details['postAdForm.adType'] = ad
     for attrKey, attrVal in category_map.items():
         if attrKey != 'category':
-            details["postAdForm.attributeMap[{}]".format(attrKey)] = attrVal
-    details['postAdForm.priceType'] = pmt_type
+            details[attrKey] = attrVal
     details['postAdForm.city'] = address_map['city']
     details['postAdForm.province'] = address_map['province']
     details['postAdForm.postalCode'] = address_map['postal_code']
@@ -248,11 +242,8 @@ def run_program():
     details['locationLevel0'] = location_area
     details['topAdDuration'] = "7"
     details['submitType'] = "saveAndCheckout"
-    details['postAdForm.title'] = title
     details['postAdForm.description'] = description
     details['categoryId'] = category_map['category']
-    if pmt_type == 'FIXED':
-        details['postAdForm.priceAmount'] = price
     details['image_paths'] = photos
     if username and password:
         details['username'] = username
