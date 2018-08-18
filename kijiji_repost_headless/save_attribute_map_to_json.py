@@ -20,37 +20,6 @@ payload = {'emailOrNickname': KIJIJI_USERNAME,
             }
 resp = session.post(url, data = payload)
 
-#Returns a list of category IDs mapped to their corresponding kijiji category name
-# Example: {'214': 'apartments, condos > 2 bedroom', '782': 'computer accessories > monitors', '174': 'used cars & trucks'}
-def get_category_map(session, branchCategories, is_initial_run):
-    leaf_category = {}
-    new_branches = {}
-    if is_initial_run:
-        select_category_page = session.get("https://www.kijiji.ca/p-select-category.html")
-        category_soup = bs4.BeautifulSoup(select_category_page.text, "html.parser")
-        for category_node in category_soup.select('[id^=CategoryId]'):
-            category_name = category_node.get_text().strip("\n").strip()
-            category_id = category_node['data-cat-id']
-            if (category_node['data-cat-leaf']=='false'):
-                new_branches[category_id] = category_name
-            else:
-                leaf_category[category_id] = category_name
-    elif not is_initial_run and not branchCategories:
-        return {}
-    else:
-        for [cat_id, name] in branchCategories.items():
-            inner_select_url = 'https://www.kijiji.ca/p-select-category.html?categoryId='+cat_id
-            select_category_page = session.get(inner_select_url)
-            category_soup = bs4.BeautifulSoup(select_category_page.text, 'html.parser')
-            for category_node in category_soup.select('[class=category-link]'):
-                category_name = name + " > " + category_node.get_text().strip("\n").strip()
-                category_id = category_node['data-cat-id']
-                if (category_node['data-cat-leaf']=='false'):
-                    new_branches[category_id] = category_name
-                else:
-                    leaf_category[category_id] = category_name
-    return {**leaf_category, **(get_category_map(session, new_branches, False))}
-
 # This is the dictionary that would need to be saved in a json file
 postAdAttributes = []
 """
@@ -100,54 +69,82 @@ postAdAttributes is a list of dictionaries that should look like this:
 }
 """
 
-for category_id, category_name in get_category_map(session, [], True).items():
-    print("Searching", category_name, "...\n")
-
+for category_id in range(0,1000):
+    print("Searching category_id {}".format(category_id))
 
     category_props = {}
     category_props['category_id'] = category_id
-    category_props['category_name'] = category_name
+
     category_props['attributes'] = []
 
-    postingUrl="https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId="+category_id
+    postingUrl="https://www.kijiji.ca/p-post-ad.html?categoryId={}".format(category_id)
     newAdPage = session.get(postingUrl)
     newAdPageSoup = bs4.BeautifulSoup(newAdPage.text, 'html.parser')
 
-    #Find all the input boxes where the user is required to give input
-    select_and_input = newAdPageSoup.find_all(['select', 'input'], {"name": lambda x: x and x.startswith('postAdForm.attributeMap')})
+    #Find whether the category is actually valid
+    title_input_div = newAdPageSoup.find_all(['textarea'], {"id": "AdTitleForm"})
 
-    for item in select_and_input:
+    #Find the category name
+    category_name = newAdPageSoup.select("div.form-section strong")
+    if len(category_name) == 0:
+        continue
+
+    category_props['category_name'] = ">".join([name.get_text().strip("\n").strip() for name in category_name])
+
+    #Find all the input boxes where the user is required to give input
+    select_boxes = newAdPageSoup.find_all(['select'], {"name": lambda x: x and x.startswith('postAdForm')})
+    input_boxes = newAdPageSoup.find_all(['input'], {"name": lambda x: x and x.startswith('postAdForm'), "type": "text"})
+    input_radios = newAdPageSoup.find_all(['input'], {"name": lambda x: x and x.startswith('postAdForm'), "type": "radio"})
+
+    useless_attributes_array = ["pstad-email"]
+    for item in select_boxes:
+        attributes = {}
 
         #Human readable name of input box
         item_label = newAdPageSoup.find('label', {'for': item['id']})
+        if item_label is None:
+           # This branch will be used for real estate categoories ie: categoryId=35
+           item_label = item.parent.findNext("p")
 
         #Current attribute being examined
+        attributes['attribute_id'] = item['id']
+        attributes['attribute_name'] = item_label.text.replace('\n','').strip()
+
+        attributes['attribute_options'] = [{"option_id": option['value'], "option_name" : option.text} for option in item.select('option') if option['value'] != ""]
+        category_props['attributes'].append(attributes)
+
+    for item in input_boxes:
+        attributes = {}
+        item_label = newAdPageSoup.find('label', {'for': item['id']})
+        if item['id'] in useless_attributes_array:
+            continue
+
+        #Current attribute being examined
+        attributes['attribute_id'] = item['id']
+
+        attributes['attribute_options'] = None
+
+        category_props['attributes'].append(attributes)
+
+    for item in input_radios:
+        attributes = {}
+        item_label = newAdPageSoup.find('label', {'for': item['id']})
+
         attributes = {}
         attributes['attribute_id'] = item['id']
         attributes['attribute_name'] = item_label.text.replace('\n','').strip()
 
-        if item.name == "select":
-            attributes['attribute_options'] = [{"option_id": option['value'], "option_name" : option.text} for option in item.select('option') if option['value'] != ""]
+	item_name = item.parent.text.replace('\n', '')
 
-        elif item.name == "input":
+	# if the attribute is already in the dictionary... add the option to the options dict
+	att = next((attribute for attribute in category_props['attributes'] if attribute.get("attribute_id") == item['id']), None)
+	if att:
+	    att['attribute_options'].append({"option_id": item['value'], "option_name": item_name})
+	    continue
 
-            # if it's a text input, there's no options, the user must enter something manually
-            if item['type'] == 'text':
-                attributes['attribute_options'] = None
-
-            else:
-                item_name = item.parent.text.replace('\n', '')
-
-                # if the attribute is already in the dictionary... add the option to the options dict
-                att = next((attribute for attribute in category_props['attributes'] if attribute.get("attribute_id") == item['id']), None)
-                if att:
-                    att['attribute_options'].append({"option_id": item['value'], "option_name": item_name})
-                    continue
-
-                # else, create the attribute dict and the options dict
-                else:
-                    attributes['attribute_options'] = [{"option_id": item['value'], "option_name": item_name}]
-
+	# else, create the attribute dict and the options dict
+	else:
+	    attributes['attribute_options'] = [{"option_id": item['value'], "option_name": item_name}]
         category_props['attributes'].append(attributes)
 
     postAdAttributes.append(category_props)
