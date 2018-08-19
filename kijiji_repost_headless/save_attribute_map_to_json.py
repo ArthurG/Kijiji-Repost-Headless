@@ -26,46 +26,67 @@ postAdAttributes = []
 postAdAttributes is a list of dictionaries that should look like this:
 
 {
-"category_name": "computer accessories > monitors",
-"category_id": "782",
-"attributes": [
-  {
-    "attribute_options": [
+   'attributes':[
       {
-        "option_name": "18\" and under",
-        "option_id": "monitorunder18inch"
+         'attribute_human_readable':'Price:',
+         'attribute_type':'input',
+         'attribute_name':'postAdForm.priceAmount'
       },
       {
-        "option_name": "19\"-20\"",
-        "option_id": "monitor19to20inch"
+         'attribute_human_readable':'Ad Title:',
+         'attribute_type':'input',
+         'attribute_name':'postAdForm.title'
       },
       {
-        "option_name": "21\"-24\"",
-        "option_id": "monitor21to24inch"
+         'attribute_human_readable':'YouTube Video:(optional)',
+         'attribute_type':'input',
+         'attribute_name':'postAdForm.youtubeVideoURL'
       },
       {
-        "option_name": "25\"+",
-        "option_id": "monitor25inchandabove"
+         'attribute_human_readable':'PhoneNumber',
+         'attribute_type':'input',
+         'attribute_name':'postAdForm.phoneNumber'
+      },
+      {
+         'attribute_options':[
+            {
+               'option_name':'OFFER',
+               'option_human_readable':'I am offering - You are offering an item for sale'
+            },
+            {
+               'option_name':'WANTED',
+               'option_human_readable':'I want - You want to buy an item'
+            }
+         ],
+         'attribute_human_readable':'',
+         'attribute_type':'radio',
+         'attribute_name':'postAdForm.adType'
+      },
+      {
+         'attribute_options':[
+            {
+               'option_name':'FIXED',
+               'option_human_readable':'$'
+            },
+            {
+               'option_human_readable':'Free'
+            },
+            {
+               'option_name':'CONTACT',
+               'option_human_readable':'Please Contact'
+            },
+            {
+               'option_name':'SWAP_TRADE',
+               'option_human_readable':'Swap / Trade'
+            }
+         ],
+         'attribute_human_readable':'',
+         'attribute_type':'radio',
+         'attribute_name':'postAdForm.priceType'
       }
-    ],
-    "attribute_id": "monitorsize_s",
-    "attribute_name": "Screen Size:"
-  },
-  {
-    "attribute_options": [
-      {
-        "option_name": "Owner",
-        "option_id": "ownr"
-      },
-      {
-        "option_name": "Business",
-        "option_id": "delr"
-      }
-    ],
-    "attribute_id": "forsaleby_s",
-    "attribute_name": "For Sale By:"
-  }
-]
+   ],
+   'category_id':5,
+   'category_name':'Community>Rideshare'
 }
 """
 
@@ -98,53 +119,60 @@ for category_id in range(0,1000):
 
     useless_attributes_array = ["pstad-email"]
     for item in select_boxes:
-        attributes = {}
-
-        #Human readable name of input box
+        #Human readable label of select box
         item_label = newAdPageSoup.find('label', {'for': item['id']})
+
         if item_label is None:
            # This branch will be used for real estate categoories ie: categoryId=35
            item_label = item.parent.findNext("p")
 
         #Current attribute being examined
-        attributes['attribute_id'] = item['id']
-        attributes['attribute_name'] = item_label.text.replace('\n','').strip()
+        attributes = {}
+        attributes['attribute_type'] = "select"
+        attributes['attribute_name'] = item['name']
+        attributes['attribute_human_readable'] = item_label.text.replace('\n','').strip()
 
-        attributes['attribute_options'] = [{"option_id": option['value'], "option_name" : option.text} for option in item.select('option') if option['value'] != ""]
+        attributes['attribute_options'] = [{"option_name": option['value'], "option_human_readable" : option.text.strip().lstrip()} for option in item.select('option') if option['value'] != ""]
         category_props['attributes'].append(attributes)
 
     for item in input_boxes:
-        attributes = {}
+        #Human readable label of input box
         item_label = newAdPageSoup.find('label', {'for': item['id']})
-        if item['id'] in useless_attributes_array:
-            continue
 
         #Current attribute being examined
-        attributes['attribute_id'] = item['id']
+        attributes = {}
+        attributes['attribute_type'] = "input"
+        attributes['attribute_name'] = item['name']
+        if item_label is None:
+            attributes['attribute_human_readable'] = item["id"]
+        else:
+            attributes['attribute_human_readable'] = item_label.text.replace('\n','').strip()
 
-        attributes['attribute_options'] = None
+        if item['id'] in useless_attributes_array:
+            continue
 
         category_props['attributes'].append(attributes)
 
     for item in input_radios:
-        attributes = {}
+        #Human readable label of radio
         item_label = newAdPageSoup.find('label', {'for': item['id']})
 
+        #Current attribute being examined
         attributes = {}
-        attributes['attribute_id'] = item['id']
-        attributes['attribute_name'] = item_label.text.replace('\n','').strip()
+        attributes['attribute_type'] = "radio"
+        attributes['attribute_name'] = item['name']
+        attributes['attribute_human_readable'] = item_label.text.replace('\n','').strip()
 
-	item_name = item.parent.text.replace('\n', '')
+        item_name = item.parent.text.replace('\n', '').strip().lstrip()
 
-	# if the attribute is already in the dictionary... add the option to the options dict
-	att = next((attribute for attribute in category_props['attributes'] if attribute.get("attribute_id") == item['id']), None)
-	if att:
-	    att['attribute_options'].append({"option_id": item['value'], "option_name": item_name})
-	    continue
-
-	# else, create the attribute dict and the options dict
-	else:
-	    attributes['attribute_options'] = [{"option_id": item['value'], "option_name": item_name}]
+        # if the attribute is already in the dictionary... add the option to the options dict
+        att = next((attribute for attribute in category_props['attributes'] if attribute.get("attribute_name") == item['name']), None)
+        if att:
+            att['attribute_options'].append({"option_name": item['value'], "option_human_readable": item_name})
+            continue
+        # else, create the attribute dict and the options dict
+        else:
+            attributes['attribute_options'] = [{"option_name": item['value'], "option_human_readable": item_name}]
         category_props['attributes'].append(attributes)
 
     postAdAttributes.append(category_props)
