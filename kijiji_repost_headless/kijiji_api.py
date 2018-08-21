@@ -184,6 +184,7 @@ class KijijiApi:
 
         # Format ad data and check constraints
         data['postAdForm.description'] = data['postAdForm.description'].replace("\\n", "\n")
+        data['postAdForm.title'] = data['postAdForm.title'].strip()
         title_len = len(data.get("postAdForm.title", ""))
         if not title_len >= 8:
             raise KijijiApiException("Your ad title is too short! (min 8 chars)")
