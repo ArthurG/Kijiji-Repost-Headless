@@ -70,6 +70,8 @@ def get_post_details(ad_file, api=None):
 
     # Remove image_paths key; it does not need to be sent in the HTTP post request later on
     del data['image_paths']
+    
+    data['postAdForm.title'] = data['postAdForm.title'].strip()
 
     return [data, files]
 
