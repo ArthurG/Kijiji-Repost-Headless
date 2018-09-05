@@ -194,7 +194,7 @@ class KijijiApi:
         new_ad_url = "https://www.kijiji.ca/p-submit-ad.html"
         resp = self.session.post(new_ad_url, data=data)
         resp.raise_for_status()
-        if "Delete Ad?" not in resp.text:
+        if "deleteWithoutSurvey" not in resp.text:
             if "There was an issue posting your ad, please contact Customer Service." in resp.text:
                 raise KijijiApiException("Could not post ad; this user is banned.", resp.text)
             else:
