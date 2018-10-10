@@ -30,26 +30,19 @@ yaml.add_representer(OrderedDict, represent_ordereddict)
 # Dictionary w/ postal_code, lat, lng, city, province
 def get_address_map():
     address = input("Your address: ")
-    resp = requests.get('https://maps.googleapis.com/maps/api/geocode/json', params={'address': address})
+    resp = requests.get('https://nominatim.openstreetmap.org/search', params={'q': address, 'addressdetails': 1, 'format':'json'})
     resp.raise_for_status()
 
-    latlng_json = json.loads(resp.text)
-    if latlng_json['status'] == 'ZERO_RESULTS':
+    results = json.loads(resp.text)
+    if len(results) == 0:
         print("Found no results! Try again.")
         print()  # Empty line
         return None  # Restart
-    elif latlng_json['status'] != 'OK':
-        # Any other non-OK status
-        if 'error_message' in latlng_json:
-            print("Maps API error: {}".format(latlng_json['error_message']))
-        print()  # Empty line
-        return None  # Restart
 
-    results = latlng_json['results']
     if len(results) > 1:
         # Multiple results, prompt for choice
-        for i, result in enumerate(sorted(results, key=itemgetter('formatted_address'))):
-            print("{:>2d} - {}".format(i + 1, result['formatted_address']))
+        for i, result in enumerate(sorted(results, key=itemgetter('display_name'))):
+            print("{:>2d} - {}".format(i + 1, result['display_name']))
 
         while True:
             response = input("Select a result from the list above (choose number) [To restart, enter 0]: ")
@@ -58,49 +51,39 @@ def get_address_map():
                 return None  # Restart
             if response.isdigit():
                 if 0 < int(response) <= len(results):
-                    chosen_result = sorted(results, key=itemgetter('formatted_address'))[int(response) - 1]
+                    chosen_result = sorted(results, key=itemgetter('display_name'))[int(response) - 1]
                     break
             print("Enter a valid number!")
     else:
         # Must only be one result, don't prompt for choice
         # No results case was already handled above by checking 'status' field of Google maps API response
         chosen_result = results[0]
-        print("Found one result: {}".format(chosen_result['formatted_address']))
+        print("Found one result: {}".format(chosen_result['display_name']))
 
     try:
-        latlng = chosen_result['geometry']['location']
-    except KeyError:
-        print("Geolocation data is missing! Try again.")
-        print()  # Empty line
-        return None  # Restart
-
-    try:
-        postal_code = [item for item in chosen_result['address_components'] if
-                       'postal_code' in item['types']][0]['short_name']
+        postal_code = chosen_result['address']['postcode'] 
     except (IndexError, KeyError):
         print("Address is too vague; postal code is missing! Try again...")
         print()  # Empty line
         return None  # Restart
 
     try:
-        city = [item for item in chosen_result['address_components'] if
-                'administrative_area_level_3' in item['types'] or 'locality' in item['types']][0]['short_name']
+        city = chosen_result['address']['city'] 
     except (IndexError, KeyError):
         print("Address is too vague; city is missing! Try again.")
         print()  # Empty line
         return None  # Restart
 
     try:
-        province = [item for item in chosen_result['address_components'] if
-                    'administrative_area_level_1' in item['types']][0]['short_name']
+        province = chosen_result['address']['state'] 
     except (IndexError, KeyError):
         print("Address is too vague; province is missing! Try again.")
         print()  # Empty line
         return None  # Restart
 
     ans = {}
-    ans['lat'] = str(latlng['lat'])
-    ans['lng'] = str(latlng['lng'])
+    ans['lat'] = str(chosen_result['lat'])
+    ans['lng'] = str(chosen_result['lon'])
     ans['postal_code'] = postal_code
     ans['city'] = city
     ans['province'] = province
