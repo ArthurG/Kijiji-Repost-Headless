@@ -90,7 +90,22 @@ postAdAttributes is a list of dictionaries that should look like this:
 }
 """
 
-for category_id in range(0,1000):
+all_categories = set()
+# Perform a depth first search for finding list of categories on Kijiji
+def find_categories(category_id):
+    select_cat_url = "https://www.kijiji.ca/j-select-category.json"
+    resp = requests.get(select_cat_url, params={'categoryId': category_id, 't': 1539032850451})
+    results = json.loads(resp.text)
+    for level in results:
+        for item in results[level].get('items', []):
+            categoryId = item['categoryId']
+            if categoryId not in all_categories:
+                all_categories.add(categoryId)
+                find_categories(categoryId)
+find_categories(10)
+
+# Save the attributes of each category
+for category_id in all_categories:
     print("Searching category_id {}".format(category_id))
 
     category_props = {}
