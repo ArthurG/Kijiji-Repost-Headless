@@ -97,6 +97,7 @@ class KijijiApi:
             'targetUrl': get_kj_data(resp.text)['config']['targetUrl'],
         }
         resp = self.session.post(login_url, data=payload)
+	
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.", resp.text)
 
@@ -104,7 +105,9 @@ class KijijiApi:
         """
         Return true if logged into Kijiji for the current session
         """
-        return "Sign Out" in self.session.get('https://www.kijiji.ca/m-my-ads.html/').text
+        txt = self.session.get('https://www.kijiji.ca/m-my-ads.html/').text
+
+        return "Log Out" in txt
 
     def logout(self):
         """
