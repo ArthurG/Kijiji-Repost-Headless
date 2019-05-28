@@ -70,7 +70,7 @@ def get_xsrf_token(html):
             m = p.search(script.string.replace("\n", ""))
             if m:
                 # Using yaml to load since this is not valid JSON
-                return yaml.load(m.group(1))['token']
+                return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
     raise KijijiApiException("XSRF token not found in html text.", html)
 
 
@@ -97,7 +97,7 @@ class KijijiApi:
             'targetUrl': get_kj_data(resp.text)['config']['targetUrl'],
         }
         resp = self.session.post(login_url, data=payload)
-	
+
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.", resp.text)
 

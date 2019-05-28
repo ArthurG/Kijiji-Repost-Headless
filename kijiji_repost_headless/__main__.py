@@ -64,13 +64,13 @@ def get_post_details(ad_file, api=None):
     Extract ad data from inf file
     """
     with open(ad_file, 'r') as f:
-        data = yaml.load(f)
+        data = yaml.load(f, Loader=yaml.FullLoader)
 
     files = [open(os.path.join(os.path.dirname(ad_file), picture), 'rb').read() for picture in data['image_paths']]
 
     # Remove image_paths key; it does not need to be sent in the HTTP post request later on
     del data['image_paths']
-    
+
     data['postAdForm.title'] = data['postAdForm.title'].strip()
 
     return [data, files]
