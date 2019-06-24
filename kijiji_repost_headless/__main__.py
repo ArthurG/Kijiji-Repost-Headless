@@ -49,7 +49,7 @@ def main():
     args = parser.parse_args()
     try:
         args.function(args)
-    except AttributeError:
+    except argparse.ArgumentError:
         parser.print_help()
 
 
