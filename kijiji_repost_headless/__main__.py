@@ -160,7 +160,7 @@ def repost_ad(args, api=None):
     sleep(20)
     print("Still waiting; just 10 seconds...")
     sleep(10)
-    print("Contacting Kijiji; Posting Ad now")
+    print("Posting Ad now")
     post_ad(args)
 
 
