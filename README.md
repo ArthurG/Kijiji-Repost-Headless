@@ -1,5 +1,7 @@
 # Kijiji Repost Headless
 
+[![Build Status](https://circleci.com/gh/ArthurG/Kijiji-Repost-Headless.svg?style=svg)](https://circleci.com/gh/ArthurG/Kijiji-Repost-Headless)
+
 #### Post ads on Kijiji
 
 ## Setup
@@ -70,4 +72,3 @@ Please open a GitHub issue or pull request if you discover problems.
 
 - Better error handling
 - Avoid reuploading the same pictures again and again
-
