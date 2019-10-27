@@ -185,6 +185,10 @@ class KijijiApi:
         data['ca.kijiji.xsrf.token'] = get_token(resp.text, 'ca.kijiji.xsrf.token')
         data['postAdForm.fraudToken'] = get_token(resp.text, 'postAdForm.fraudToken')
 
+        # Select basic package and confirm terms
+        data['postAdForm.confirmedTerms'] = True
+        data['featuresForm.featurePackage'] = "PKG_BASIC"
+
         # Format ad data and check constraints
         data['postAdForm.description'] = data['postAdForm.description'].replace("\\n", "\n")
         title_len = len(data.get("postAdForm.title", ""))
