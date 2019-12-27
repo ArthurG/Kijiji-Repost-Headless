@@ -10,7 +10,7 @@ import yaml
 
 from get_ids import get_location_and_area_ids
 
-ad_file_name = 'item.yml'
+ad_file_name = 'item.yaml'
 ad_type = ['OFFER', 'WANTED']
 price_type = ['FIXED', 'GIVE_AWAY', 'CONTACT', 'SWAP_TRADE']
 
@@ -188,7 +188,7 @@ def get_description():
 
 def run_program():
     print("****************************************************************")
-    print("* Creating the item.yml file. Please answer all the questions. *")
+    print("* Creating the item.yaml file. Please answer all the questions. *")
     print("****************************************************************\n")
 
     print("Your ad must be submitted in a specific category.")
@@ -201,7 +201,7 @@ def run_program():
     photos = []
     photos_len = int(input("Specify how many images are there to upload: "))
     for i in range(photos_len):
-        photos.append(input("Specify the path of image #{} relative to the .yml file: ".format(i+1)))
+        photos.append(input("Specify the path of image #{} relative to the .yaml file: ".format(i+1)))
 
     username = input("Kijiji username (leave empty to not include): ")
     if username:
