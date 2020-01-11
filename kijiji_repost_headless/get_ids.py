@@ -18,7 +18,7 @@ def find_where(d, area_id=None):
 
     # make sure the input is a number and a valid index
     while True:
-        index = input('\nWhere are you?')
+        index = input('\nWhere are you? ')
         if index.isdigit():
             if 0 < int(index) <= len(list_of_dicts):
                 selected_dict = list_of_dicts[int(index) - 1]
