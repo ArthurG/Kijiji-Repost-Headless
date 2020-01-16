@@ -105,9 +105,12 @@ class KijijiApi:
         """
         Return true if logged into Kijiji for the current session
         """
-        txt = self.session.get('https://www.kijiji.ca/m-my-ads.html/').text
-
-        return "Log Out" in txt
+        resp = self.session.get('https://www.kijiji.ca/my/ads.json')
+        try:
+            resp.json()
+            return True
+        except:
+            return False
 
     def logout(self):
         """
