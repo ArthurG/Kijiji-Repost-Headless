@@ -67,9 +67,11 @@ def get_address_map():
         print()  # Empty line
         return None  # Restart
 
-    try:
+    if "city" in chosen_result['address']:
         city = chosen_result['address']['city'] 
-    except (IndexError, KeyError):
+    elif "town" in chosen_result['address']:
+        city = chosen_result['address']['town'] 
+    else:
         print("Address is too vague; city is missing! Try again.")
         print()  # Empty line
         return None  # Restart
