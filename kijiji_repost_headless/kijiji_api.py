@@ -2,10 +2,20 @@ import json
 import re
 import sys
 from time import strftime
-
+from random import choice
 import bs4
 import requests
 import yaml
+
+user_agents = [
+    # Random list of top UAs for mac and windows/ chrome & FF
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/74.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:61.0) Gecko/20100101 Firefox/74.0"
+]
+session_ua = choice(user_agents)
+request_headers = {"User-Agent": session_ua}
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -87,7 +97,7 @@ class KijijiApi:
         Login to Kijiji for the current session
         """
         login_url = 'https://www.kijiji.ca/t-login.html'
-        resp = self.session.get(login_url)
+        resp = self.session.get(login_url, headers=request_headers)
         payload = {
             'emailOrNickname': username,
             'password': password,
@@ -105,7 +115,7 @@ class KijijiApi:
         """
         Return true if logged into Kijiji for the current session
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads.json')
+        resp = self.session.get('https://www.kijiji.ca/my/ads.json', headers=request_headers)
         try:
             resp.json()
             return True
@@ -116,13 +126,13 @@ class KijijiApi:
         """
         Logout of Kijiji for the current session
         """
-        self.session.get('https://www.kijiji.ca/m-logout.html')
+        self.session.get('https://www.kijiji.ca/m-logout.html',  headers=request_headers)
 
     def delete_ad(self, ad_id):
         """
         Delete ad based on ad ID
         """
-        my_ads_page = self.session.get('https://www.kijiji.ca/m-my-ads.html')
+        my_ads_page = self.session.get('https://www.kijiji.ca/m-my-ads.html',  headers=request_headers)
         params = {
             'Action': 'DELETE_ADS',
             'Mode': 'ACTIVE',
@@ -130,7 +140,7 @@ class KijijiApi:
             'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(ad_id),
             'ca.kijiji.xsrf.token': get_xsrf_token(my_ads_page.text),
         }
-        resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params)
+        resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params,  headers=request_headers)
         if "OK" not in resp.text:
             raise KijijiApiException("Could not delete ad.", resp.text)
 
@@ -151,7 +161,12 @@ class KijijiApi:
         image_upload_url = 'https://www.kijiji.ca/p-upload-image.html'
         for img_file in image_files:
             for i in range(0, 3):
-                r = self.session.post(image_upload_url, files={'file': img_file}, headers={"X-Ebay-Box-Token": token})
+                r = self.session.post(
+                    image_upload_url, 
+                    files={'file': img_file}, 
+                    headers={
+                        "X-Ebay-Box-Token": token,
+                        "User-Agent": session_ua})
                 r.raise_for_status()
                 try:
                     image_tree = json.loads(r.text)
@@ -171,7 +186,7 @@ class KijijiApi:
         'image_files' is a list of binary objects corresponding to images to upload
         """
         # Load ad posting page (arbitrary category)
-        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=15')
+        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=15', headers=request_headers)
 
         # Get token required for upload
         m = re.search(r"initialXsrfToken: '(\S+)'", resp.text)
@@ -202,7 +217,7 @@ class KijijiApi:
 
         # Upload the ad itself
         new_ad_url = "https://www.kijiji.ca/p-submit-ad.html"
-        resp = self.session.post(new_ad_url, data=data)
+        resp = self.session.post(new_ad_url, data=data, headers=request_headers)
         resp.raise_for_status()
         if "deleteWithoutSurvey" not in resp.text:
             if "There was an issue posting your ad, please contact Customer Service." in resp.text:
@@ -219,7 +234,7 @@ class KijijiApi:
         """
         Return a list of dicts with properties for every active ad
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads.json')
+        resp = self.session.get('https://www.kijiji.ca/my/ads.json', headers=request_headers)
         resp.raise_for_status()
         ads_json = json.loads(resp.text)
         ads_info = ads_json['ads']
@@ -229,7 +244,7 @@ class KijijiApi:
             # Can't use dict comprehension for building params because every key has the same name,
             # must use a list of key-value tuples instead
             params = [("ids", ad['id']) for ad in ads_info.values()]
-            resp = self.session.get('https://www.kijiji.ca/my/ranks', params=params)
+            resp = self.session.get('https://www.kijiji.ca/my/ranks', params=params, headers=request_headers)
             resp.raise_for_status()
             ranks_json = json.loads(resp.text)
 
