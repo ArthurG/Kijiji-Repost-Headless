@@ -6,9 +6,20 @@ from collections import OrderedDict
 from operator import itemgetter
 
 import requests
+from random import choice
 import yaml
 
 from get_ids import get_location_and_area_ids
+
+user_agents = [
+    # Random list of top UAs for mac and windows/ chrome & FF
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/74.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:61.0) Gecko/20100101 Firefox/74.0"
+]
+session_ua = choice(user_agents) # Randomly selects a UA from the list.
+request_headers = {"User-Agent": session_ua}
 
 ad_file_name = 'item.yaml'
 ad_type = ['OFFER', 'WANTED']
@@ -30,7 +41,11 @@ yaml.add_representer(OrderedDict, represent_ordereddict)
 # Dictionary w/ postal_code, lat, lng, city, province
 def get_address_map():
     address = input("Your address: ")
-    resp = requests.get('https://nominatim.openstreetmap.org/search', params={'q': address, 'addressdetails': 1, 'format':'json'})
+    resp = requests.get(
+        'https://nominatim.openstreetmap.org/search', 
+        params={'q': address, 'addressdetails': 1, 'format':'json'},
+        headers=request_headers
+    )
     resp.raise_for_status()
 
     results = json.loads(resp.text)
