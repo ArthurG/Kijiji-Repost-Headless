@@ -57,7 +57,7 @@ def get_kj_data(html):
     The 'window.__data' JSON object contains many useful key/values
     """
     soup = bs4.BeautifulSoup(html, 'html.parser')
-    p = re.compile('window.__data=(.*);')
+    p = re.compile(r'window\.__data=(.*);')
     script_list = soup.find_all("script", {"src": False})
     for script in script_list:
         if script:
@@ -74,7 +74,7 @@ def get_xsrf_token(html):
     does not contain the usual 'ca.kijiji.xsrf.token' hidden HTML form input element, which is easier to scrape
     """
     soup = bs4.BeautifulSoup(html, 'html.parser')
-    p = re.compile('Zoop\.init\(.*config: ({.+?}).*\);')
+    p = re.compile(r'Zoop\.init\(.*config: ({.+?}).*\);')
     for script in soup.find_all("script", {"src": False}):
         if script:
             m = p.search(script.string.replace("\n", ""))
@@ -99,14 +99,23 @@ class KijijiApi:
         login_url = 'https://www.kijiji.ca/t-login.html'
         resp = self.session.get(login_url, headers=request_headers)
         payload = {
-            'emailOrNickname': username,
-            'password': password,
-            'rememberMe': 'true',
-            '_rememberMe': 'on',
-            'ca.kijiji.xsrf.token': get_token(resp.text, 'ca.kijiji.xsrf.token'),
-            'targetUrl': get_kj_data(resp.text)['config']['targetUrl'],
+            "operationName": "loginUser",
+            "variables": {
+                "input": {
+                    "emailOrNickname": username,
+                    "password": password,
+                    "rememberMe": True,
+                    "targetUrl": None,
+                    "fraudToken": None,  # Valid value doesn't appear to be necessary for login
+                    "campaign": None,
+                    "xsrfToken": get_xsrf_token(resp.text),
+                    "hints": ["NEW_AJAX_LOGIN"]
+                }
+            },
+            "query": "mutation loginUser($input: LoginUserInput!) {\n  loginUser(input: $input) {\n    userId\n    message\n    statusCode\n    redirectUrl\n    __typename\n  }\n}\n",
         }
-        resp = self.session.post(login_url, data=payload)
+        api_url = 'https://www.kijiji.ca/anvil/api'  # API endpoint
+        resp = self.session.post(api_url, json=payload)
 
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.", resp.text)
