@@ -67,21 +67,28 @@ def get_kj_data(html):
     raise KijijiApiException("'__data' JSON object not found in html text.", html)
 
 
-def get_xsrf_token(html):
+def get_xsrf_token(session):
     """
     Return XSRF token
     This function is only necessary for the 'm-my-ads.html' page, as this particular page
     does not contain the usual 'ca.kijiji.xsrf.token' hidden HTML form input element, which is easier to scrape
     """
-    soup = bs4.BeautifulSoup(html, 'html.parser')
-    p = re.compile(r'Zoop\.init\(.*config: ({.+?}).*\);')
-    for script in soup.find_all("script", {"src": False}):
-        if script:
-            m = p.search(script.string.replace("\n", ""))
-            if m:
-                # Using yaml to load since this is not valid JSON
-                return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
-    raise KijijiApiException("XSRF token not found in html text.", html)
+    #soup = bs4.BeautifulSoup(html, 'html.parser')
+    #p = re.compile(r'Zoop\.init\(.*config: ({.+?}).*\);')
+    #for script in soup.find_all("script", {"src": False}):
+    #    if script:
+    #        m = p.search(script.string.replace("\n", ""))
+    #        if m:
+    #            # Using yaml to load since this is not valid JSON
+    #            return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
+    #raise KijijiApiException("XSRF token not found in html text.", html)
+    
+    # Get Token
+    x = session.head('https://www.kijiji.ca/j-token-gen.json')
+    setCookie = x.headers['set-cookie']
+    sessionID = x.headers['x-ebay-box-sessionid']
+    token = x.headers['x-ebay-box-token']
+    return setCookie, sessionID, token
 
 
 class KijijiApi:
@@ -96,27 +103,39 @@ class KijijiApi:
         """
         Login to Kijiji for the current session
         """
-        login_url = 'https://www.kijiji.ca/t-login.html'
-        resp = self.session.get(login_url, headers=request_headers)
-        payload = {
+        # Headers
+        url = 'https://www.kijiji.ca/anvil/api'
+        headers={
+            'accept-language':'en-ca',
+            'accept-encoding':'br, gzip, deflate',
+            'origin':'https://www.kijiji.ca',
+            'user-agent':session_ua,
+            'lang':'en',
+            'x-ecg-platform':'DESKTOP',
+            'ssr':'false',
+            'referer':'https://www.kijiji.ca/t-login.html'
+            }
+
+        # setCookie & sessionID unused for now, but available if required
+        setCookie, sessionID, token = get_xsrf_token(self.session)
+        
+        payload = [{
             "operationName": "loginUser",
             "variables": {
                 "input": {
                     "emailOrNickname": username,
                     "password": password,
-                    "rememberMe": True,
+                    "rememberMe": False,
                     "targetUrl": None,
-                    "fraudToken": None,  # Valid value doesn't appear to be necessary for login
                     "campaign": None,
-                    "xsrfToken": get_xsrf_token(resp.text),
+                    "xsrfToken": token,
                     "hints": ["NEW_AJAX_LOGIN"]
                 }
             },
-            "query": "mutation loginUser($input: LoginUserInput!) {\n  loginUser(input: $input) {\n    userId\n    message\n    statusCode\n    redirectUrl\n    __typename\n  }\n}\n",
-        }
-        api_url = 'https://www.kijiji.ca/anvil/api'  # API endpoint
-        resp = self.session.post(api_url, json=payload)
-
+            "query": "mutation loginUser($input: LoginUserInput!) {\n  loginUser(input: $input) {\n    userId\n    message\n    statusCode\n    redirectUrl\n    __typename\n  }\n}\n"
+        }]
+        resp = self.session.post(url, json=payload)
+        
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.", resp.text)
 
@@ -141,13 +160,15 @@ class KijijiApi:
         """
         Delete ad based on ad ID
         """
+        # setCookie & sessionID unused for now, but available if required
+        setCookie, sessionID, token = get_xsrf_token(self.session)
         my_ads_page = self.session.get('https://www.kijiji.ca/m-my-ads.html',  headers=request_headers)
         params = {
             'Action': 'DELETE_ADS',
             'Mode': 'ACTIVE',
             'needsRedirect': 'false',
             'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(ad_id),
-            'ca.kijiji.xsrf.token': get_xsrf_token(my_ads_page.text),
+            'ca.kijiji.xsrf.token': token,
         }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params,  headers=request_headers)
         if "OK" not in resp.text:
