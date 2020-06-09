@@ -82,9 +82,12 @@ def post_ad(args, api=None):
     """
     [data, image_files] = get_post_details(args.ad_file)
     get_username_if_needed(args, data)
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
 
     attempts = 1
-    while not check_ad(args) and attempts < 5:
+    while not check_ad(args, api) and attempts < 5:
         if attempts > 1:
             print("Failed ad post attempt #{}, trying again.".format(attempts))
         attempts += 1
@@ -93,7 +96,7 @@ def post_ad(args, api=None):
             api = kijiji_api.KijijiApi()
             api.login(args.username, args.password)
         api.post_ad_using_data(data, image_files)
-    if not check_ad(args):
+    if not check_ad(args, api):
         print("Failed ad post attempt #{}, giving up.".format(attempts))
 
 
@@ -157,7 +160,7 @@ def repost_ad(args, api=None):
     print("Still waiting; just 10 seconds...")
     sleep(10)
     print("Posting Ad now")
-    post_ad(args)
+    post_ad(args, api)
 
 
 def check_ad(args, api=None):

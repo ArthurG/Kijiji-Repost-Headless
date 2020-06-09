@@ -96,7 +96,7 @@ class KijijiApi:
         """
         Login to Kijiji for the current session
         """
-        login_url = 'https://www.kijiji.ca/t-login.html'
+        login_url = 'https://www.kijiji.ca/'
         resp = self.session.get(login_url, headers=request_headers)
         payload = {
             "operationName": "loginUser",
