@@ -108,8 +108,7 @@ class KijijiApi:
                     "targetUrl": None,
                     "fraudToken": None,  # Valid value doesn't appear to be necessary for login
                     "campaign": None,
-                    "xsrfToken": get_xsrf_token(resp.text),
-                    "hints": ["NEW_AJAX_LOGIN"]
+                    "xsrfToken": get_xsrf_token(resp.text)
                 }
             },
             "query": "mutation loginUser($input: LoginUserInput!) {\n  loginUser(input: $input) {\n    userId\n    message\n    statusCode\n    redirectUrl\n    __typename\n  }\n}\n",
