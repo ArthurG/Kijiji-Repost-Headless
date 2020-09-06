@@ -152,12 +152,12 @@ class KijijiApi:
         if "OK" not in resp.text:
             raise KijijiApiException("Could not delete ad.", resp.text)
 
-    def delete_ad_using_title(self, title):
+    def delete_ad_using_title(self, title, categoryId):
         """
         Delete ad based on ad title
         """
         all_ads = self.get_all_ads()
-        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip()]
+        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip() and ad['categoryId'] == categoryId]
 
     def upload_image(self, token, image_files=[]):
         """
@@ -167,11 +167,11 @@ class KijijiApi:
         """
         image_urls = []
         image_upload_url = 'https://www.kijiji.ca/p-upload-image.html'
-        for img_file in image_files:
+        for idx, img_file in enumerate(image_files):
             for i in range(0, 3):
                 r = self.session.post(
-                    image_upload_url, 
-                    files={'file': img_file}, 
+                    image_upload_url,
+                    files={'file': img_file},
                     headers={
                         "X-Ebay-Box-Token": token,
                         "User-Agent": session_ua})
@@ -179,11 +179,11 @@ class KijijiApi:
                 try:
                     image_tree = json.loads(r.text)
                     img_url = image_tree['thumbnailUrl']
-                    print("Image upload success on try #{}".format(i+1))
+                    print("Image #{} upload success on try #{}".format(idx + 1, i+1))
                     image_urls.append(img_url)
                     break
                 except (KeyError, ValueError):
-                    print("Image upload failed on try #{}".format(i+1))
+                    print("Image #{} upload failed on try #{}".format(idx + 1, i+1))
         return [image for image in image_urls if image is not None]
 
     def post_ad_using_data(self, data, image_files=[]):
