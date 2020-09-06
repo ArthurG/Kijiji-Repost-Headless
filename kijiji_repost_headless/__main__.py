@@ -131,12 +131,15 @@ def delete_ad(args, api=None):
 
     if args.ad_file:
         del_ad_name = ""
+        del_ad_category = -1
         for item in data:
             if item == "postAdForm.title":
                 del_ad_name = data[item]
+            if item == "categoryId":
+                del_ad_category = data[item]
         try:
-            api.delete_ad_using_title(del_ad_name)
-            print("Deletion successful")
+            api.delete_ad_using_title(del_ad_name, del_ad_category)
+            print("Deletion successful or unaffected")
         except kijiji_api.KijijiApiException:
             print("Did not find an existing ad with matching title, skipping ad deletion")
 
@@ -175,13 +178,16 @@ def check_ad(args, api=None):
         api.login(args.username, args.password)
 
     ad_title = ""
+    ad_category = -1
+
     for key, val in data.items():
         if key == "postAdForm.title":
             ad_title = val
-            break
+        if key == "categoryId":
+            ad_category = val
 
     all_ads = api.get_all_ads()
-    return [ad['title'] for ad in all_ads if ad['title'] == ad_title]
+    return [ad['title'] for ad in all_ads if ad['title'] == ad_title and ad['categoryId'] == ad_category]
 
 
 def nuke(args, api=None):
