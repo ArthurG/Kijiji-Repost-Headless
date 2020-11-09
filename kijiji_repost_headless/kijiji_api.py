@@ -6,7 +6,6 @@ from random import choice
 import bs4
 import requests
 import yaml
-import os
 
 user_agents = [
     # Random list of top UAs for mac and windows/ chrome & FF
@@ -159,12 +158,12 @@ class KijijiApi:
         if "OK" not in resp.text:
             raise KijijiApiException("Could not delete ad.", resp.text)
 
-    def delete_ad_using_title(self, title):
+    def delete_ad_using_title(self, title, categoryId):
         """
         Delete ad based on ad title
         """
         all_ads = self.get_all_ads()
-        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip()]
+        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip() and ad['categoryId'] == categoryId]
 
     def upload_image(self, token, image_files=[]):
         """
@@ -177,8 +176,8 @@ class KijijiApi:
         for img_file in image_files:
             for i in range(0, 3):
                 r = self.session.post(
-                    image_upload_url, 
-                    files={'file': img_file}, 
+                    image_upload_url,
+                    files={'file': img_file},
                     headers={
                         "X-Ebay-Box-Token": token,
                         "User-Agent": session_ua})
