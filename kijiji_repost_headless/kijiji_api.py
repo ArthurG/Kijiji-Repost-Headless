@@ -6,6 +6,7 @@ from random import choice
 import bs4
 import requests
 import yaml
+import os
 
 user_agents = [
     # Random list of top UAs for mac and windows/ chrome & FF
@@ -118,14 +119,11 @@ class KijijiApi:
         resp = self.session.post(api_url, json=payload)
         """
         
-        dirs = __file__.split("/")
-        ssidDir = ""
-        for i in range(len(dirs)-2):
-            ssidDir += dirs[i] + "/"
-        ssidDir += "ssid.txt"
-        ssidFile = open(ssidDir, "r")
-        cookie_dict = {'ssid': ssidFile.read()}
-        requests.utils.add_dict_to_cookiejar(self.session.cookies,cookie_dict)
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        ssid_path = os.path.join(parent_dir, "ssid.txt")
+        with open(ssid_path) as ssidFile:
+            cookie_dict = {'ssid': ssidFile.read()}
+            requests.utils.add_dict_to_cookiejar(self.session.cookies,cookie_dict)
 
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.", resp.text)
