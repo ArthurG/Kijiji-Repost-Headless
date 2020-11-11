@@ -117,7 +117,12 @@ class KijijiApi:
         api_url = 'https://www.kijiji.ca/anvil/api'  # API endpoint
         resp = self.session.post(api_url, json=payload)
         """
-        ssidDir = __file__[:-36] + "ssid.txt"
+        
+        dirs = __file__.split("/")
+        ssidDir = ""
+        for i in range(len(dirs)-2):
+            ssidDir += dirs[i] + "/"
+        ssidDir += "ssid.txt"
         ssidFile = open(ssidDir, "r")
         cookie_dict = {'ssid': ssidFile.read()}
         requests.utils.add_dict_to_cookiejar(self.session.cookies,cookie_dict)
