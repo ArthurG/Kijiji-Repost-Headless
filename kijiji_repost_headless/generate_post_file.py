@@ -220,10 +220,6 @@ def run_program():
     for i in range(photos_len):
         photos.append(input("Specify the path of image #{} relative to the .yaml file: ".format(i+1)))
 
-    username = input("Kijiji username (leave empty to not include): ")
-    if username:
-        password = input("Kijiji password: ")
-
     details = OrderedDict()
     for attrKey, attrVal in category_map.items():
         if attrKey != 'category':
@@ -245,9 +241,6 @@ def run_program():
     details['postAdForm.description'] = description
     details['categoryId'] = category_map['category']
     details['image_paths'] = photos
-    if username and password:
-        details['username'] = username
-        details['password'] = password
 
     f = open(ad_file_name, 'w')
     f.write(yaml.dump(details))
