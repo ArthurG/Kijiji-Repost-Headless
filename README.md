@@ -16,6 +16,15 @@
 
 ## Usage
 
+### Getting your SSID
+
+Before posting an ad, you will need to manually get your Kijiji SSID.
+
+1. Log into Kijiji in your browser. Make sure "remember me" is checked.
+2. Inspect the cookies that have been set by Kijiji for your browser.
+3. Find the cookie named "ssid" and copy its value.
+4. Paste the value into the "ssid.txt" file.
+
 ### Generating an ad posting file
 
 - Generate a posting file (item.yml) with the command `python kijiji_repost_headless build_ad` and follow the prompts
