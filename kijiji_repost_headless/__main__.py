@@ -178,16 +178,14 @@ def check_ad(args, api=None):
         api.login(args.username, args.password)
 
     ad_title = ""
-    ad_category = -1
 
     for key, val in data.items():
         if key == "postAdForm.title":
             ad_title = val
-        if key == "categoryId":
-            ad_category = val
 
     all_ads = api.get_all_ads()
-    return [ad['title'] for ad in all_ads if ad['title'] == ad_title and ad['categoryId'] == ad_category]
+    print([ad['title'] for ad in all_ads if ad['title'] == ad_title])
+    return ([ad['title'] for ad in all_ads if ad['title'] == ad_title])
 
 
 def nuke(args, api=None):
