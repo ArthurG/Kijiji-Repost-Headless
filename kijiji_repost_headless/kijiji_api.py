@@ -122,11 +122,11 @@ class KijijiApi:
         parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ssid_path = os.path.join(parent_dir, "ssid.txt")
         with open(ssid_path) as ssidFile:
-            cookie_dict = {'ssid': ssidFile.read()}
+            cookie_dict = {'ssid': ssidFile.read().strip()}
             requests.utils.add_dict_to_cookiejar(self.session.cookies,cookie_dict)
 
         if not self.is_logged_in():
-            raise KijijiApiException("Could not log in.", resp.text)
+            raise KijijiApiException("Could not log in.")
 
     def is_logged_in(self):
         """
