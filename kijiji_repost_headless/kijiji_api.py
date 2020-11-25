@@ -93,37 +93,15 @@ class KijijiApi:
         config = {}
         self.session = requests.Session()
 
-    def login(self, username, password):
+    def login(self, ssid):
         """
         Login to Kijiji for the current session
         """
-        """
-        login_url = 'https://www.kijiji.ca/'
-        resp = self.session.get(login_url, headers=request_headers)
-        payload = {
-            "operationName": "loginUser",
-            "variables": {
-                "input": {
-                    "emailOrNickname": username,
-                    "password": password,
-                    "rememberMe": True,
-                    "targetUrl": None,
-                    "fraudToken": None,  # Valid value doesn't appear to be necessary for login
-                    "campaign": None,
-                    "xsrfToken": get_xsrf_token(resp.text)
-                }
-            },
-            "query": "mutation loginUser($input: LoginUserInput!) {\n  loginUser(input: $input) {\n    userId\n    message\n    statusCode\n    redirectUrl\n    __typename\n  }\n}\n",
-        }
-        api_url = 'https://www.kijiji.ca/anvil/api'  # API endpoint
-        resp = self.session.post(api_url, json=payload)
-        """
-        
         parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        ssid_path = os.path.join(parent_dir, "ssid.txt")
+        ssid_path = os.path.join(parent_dir, ssid)
         with open(ssid_path) as ssidFile:
             cookie_dict = {'ssid': ssidFile.read().strip()}
-            requests.utils.add_dict_to_cookiejar(self.session.cookies,cookie_dict)
+            requests.utils.add_dict_to_cookiejar(self.session.cookies, cookie_dict)
 
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.")
