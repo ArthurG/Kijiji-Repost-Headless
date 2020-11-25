@@ -14,7 +14,7 @@ if sys.version_info < (3, 0):
 
 def main():
     parser = argparse.ArgumentParser(description="Post ads on Kijiji")
-    parser.add_argument('-s', '--ssid', default="ssid.txt", help='cookie of your kijiji account (ssid file)')
+    parser.add_argument('-s', '--ssid', default="ssid.txt", help='cookie of your kijiji account')
 
     subparsers = parser.add_subparsers(help='sub-command help')
 
