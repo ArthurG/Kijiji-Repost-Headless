@@ -139,12 +139,12 @@ class KijijiApi:
         if "OK" not in resp.text:
             raise KijijiApiException("Could not delete ad.", resp.text)
 
-    def delete_ad_using_title(self, title, categoryId):
+    def delete_ad_using_title(self, title):
         """
         Delete ad based on ad title
         """
         all_ads = self.get_all_ads()
-        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip() and ad['categoryId'] == categoryId]
+        [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip()]
 
     def upload_image(self, token, image_files=[]):
         """

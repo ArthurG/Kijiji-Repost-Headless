@@ -122,14 +122,11 @@ def delete_ad(args, api=None):
 
     if args.ad_file:
         del_ad_name = ""
-        del_ad_category = -1
         for item in data:
             if item == "postAdForm.title":
                 del_ad_name = data[item]
-            if item == "categoryId":
-                del_ad_category = data[item]
         try:
-            api.delete_ad_using_title(del_ad_name, del_ad_category)
+            api.delete_ad_using_title(del_ad_name)
             print("Deletion successful or unaffected")
         except kijiji_api.KijijiApiException:
             print("Did not find an existing ad with matching title, skipping ad deletion")
@@ -164,7 +161,6 @@ def check_ad(args, api=None):
     [data, _] = get_post_details(args.ad_file)
 
     if not api:
-        get_username_if_needed(args, data)
         api = kijiji_api.KijijiApi()
         api.login(args.ssid)
 
