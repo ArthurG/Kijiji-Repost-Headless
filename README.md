@@ -35,23 +35,23 @@ Before posting an ad, you will need to manually get your Kijiji SSID.
 
 Post one ad (item.yml):
 
-`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] post myproduct/item.yml`
+`python kijiji_repost_headless [-s ssid_file] post myproduct/item.yml`
 
 Repost one ad (item.yml); will delete the ad prior to posting if it already exists:
 
-`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] repost myproduct/item.yml`
+`python kijiji_repost_headless [-s ssid_file] repost myproduct/item.yml`
 
 Show all active ads:
 
-`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] show`
+`python kijiji_repost_headless [-s ssid_file] show`
 
 Delete all ads:
 
-`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] nuke`
+`python kijiji_repost_headless [-s ssid_file] nuke`
 
 Delete one ad (using ad id):
 
-`python kijiji_repost_headless [-u USERNAME] [-p PASSWORD] delete myAdId`
+`python kijiji_repost_headless [-s ssid_file] delete myAdId`
 
 ## Project Structure
 
