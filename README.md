@@ -24,6 +24,9 @@ Before posting an ad, you will need to manually get your Kijiji SSID.
 2. Inspect the cookies that have been set by Kijiji for your browser.
 3. Find the cookie named "ssid" and copy its value.
 4. Paste the value into the "ssid.txt" file.
+5. Alternately use export cookies addon in your browser (when on kijiji page and logged in and run this command to extract:
+
+`cat cookies.txt | grep ssid | awk '{print $NF}' > ssid.txt`
 
 ### Generating an ad posting file
 
