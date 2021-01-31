@@ -187,6 +187,18 @@ def get_description():
     return "\\n".join(contents)
 
 
+def yesno():
+    yes = {'yes','y', 'ye', ''}
+    no = {'no','n'}
+    
+    choice = input().lower()
+    if choice in yes:
+       return True
+    elif choice in no:
+       return False
+    else:
+       sys.stdout.write("Please respond with 'yes' or 'no'")
+
 def run_program():
     print("****************************************************************")
     print("* Creating the item.yaml file. Please answer all the questions. *")
@@ -200,6 +212,12 @@ def run_program():
     description = get_description()
     print("Ad type:")
     photos = []
+
+    # TODO - photos
+    # use fzf to find root of image dir
+    # notify user of sxiv default keybindings - use arrow keys and 'm' to mark image for use
+    # then open image dir with sxiv -i -o -t
+    # if headless, fall back onto using iterfzf multi select ?
     photos_len = int(input("Specify how many images are there to upload: "))
     for i in range(photos_len):
         photos.append(input("Specify the path of image #{} relative to the .yaml file: ".format(i+1)))
@@ -209,19 +227,25 @@ def run_program():
         if attrKey != 'category':
             details[attrKey] = attrVal
 
-    address_map = restart_function(get_address_map)
-    details['postAdForm.city'] = address_map['city']
-    details['postAdForm.province'] = address_map['province']
-    details['postAdForm.postalCode'] = address_map['postal_code']
-    details['postAdForm.addressCity'] = address_map['city']
-    details['postAdForm.addressProvince'] = address_map['province']
-    details['postAdForm.addressPostalCode'] = address_map['postal_code']
-    details['postAdForm.geocodeLat'] = address_map['lat']
-    details['postAdForm.geocodeLng'] = address_map['lng']
-    details['postAdForm.locationId'] = location_id
-    details['PostalLat'] = address_map['lat']
-    details['PostalLng'] = address_map['lng']
-    details['locationLevel0'] = location_area
+    details['addresses'] = []
+    print ("Add Address (y/n)?")
+    while yesno():              # add more addresses?
+        address_map = restart_function(get_address_map)
+        address = {}
+        address['postAdForm.city'] = address_map['city']
+        address['postAdForm.province'] = address_map['province']
+        address['postAdForm.postalCode'] = address_map['postal_code']
+        address['postAdForm.addressCity'] = address_map['city']
+        address['postAdForm.addressProvince'] = address_map['province']
+        address['postAdForm.addressPostalCode'] = address_map['postal_code']
+        address['postAdForm.geocodeLat'] = address_map['lat']
+        address['postAdForm.geocodeLng'] = address_map['lng']
+        address['postAdForm.locationId'] = location_id
+        address['PostalLat'] = address_map['lat']
+        address['PostalLng'] = address_map['lng']
+        address['locationLevel0'] = location_area
+        details['addresses'].append({'address': address})
+        print ("Add another Address (y/n)?")
 
     details['topAdDuration'] = "7"
     details['submitType'] = "saveAndCheckout"
