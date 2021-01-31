@@ -1,4 +1,5 @@
 # TODO: Actual error handling
+from iterfzf import iterfzf
 
 import json
 import os
@@ -134,33 +135,15 @@ def pick_category():
     filename = os.path.join(os.path.dirname(__file__), 'kijiji_categories_attrs.json')
     kijiji_categories_and_attributes = json.load(open(filename, 'r'))
 
-    while True:
-        keyword = input("Please provide a category keyword to search for: ")
-        possible_categories = [cat for cat in kijiji_categories_and_attributes if keyword.lower() in cat['category_name'].lower()]
-        if len(possible_categories) < 1:
-            print("Could not find any categories using the given keyword. Try again.")
-        else:
-            break
-
-    for i, cat in enumerate(sorted(possible_categories, key=itemgetter('category_name'))):
-        print("{:>2d} - {}".format(i + 1, cat['category_name']))
-
-    # Make sure the input is a number and a valid index
-    while True:
-        response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
-        if response == "0":
-            print()  # Empty line
-            return None  # Restart
-        if response.isdigit():
-            if 0 < int(response) <= len(possible_categories):
-                selected_category = sorted(possible_categories, key=itemgetter('category_name'))[int(response) - 1]
-                break
-        print("Enter a valid number!")
+    categories_hash = {cat['category_name']:cat['category_id'] for cat in kijiji_categories_and_attributes}
+    selected_category = iterfzf(categories_hash.keys())
+    cat_id = categories_hash[selected_category]
+    cat_dict = [cat_dict for cat_dict in kijiji_categories_and_attributes if cat_dict['category_id'] == cat_id][0]
 
     ans = {}
-    ans['category'] = selected_category['category_id']
+    ans['category'] = cat_id
 
-    for attribute in selected_category['attributes']:
+    for attribute in cat_dict['attributes']:
         if attribute['attribute_type'] == "input":
             ans[attribute['attribute_name']] = input("Enter a value related to \"{}\": ".format(attribute['attribute_human_readable']))
         else:
@@ -182,6 +165,7 @@ def pick_category():
                 print("Enter a valid number!")
 
     return ans
+    
 
 
 # Multiline ad description
@@ -209,9 +193,9 @@ def run_program():
     print("****************************************************************\n")
 
     print("Your ad must be submitted in a specific category.")
-
+    
+    address_maps =[]
     category_map = restart_function(pick_category)
-    address_map = restart_function(get_address_map)
     location_id, location_area = get_location_and_area_ids()  # Returns a tuple containing location ID and area ID
     description = get_description()
     print("Ad type:")
@@ -224,6 +208,8 @@ def run_program():
     for attrKey, attrVal in category_map.items():
         if attrKey != 'category':
             details[attrKey] = attrVal
+
+    address_map = restart_function(get_address_map)
     details['postAdForm.city'] = address_map['city']
     details['postAdForm.province'] = address_map['province']
     details['postAdForm.postalCode'] = address_map['postal_code']
@@ -236,6 +222,7 @@ def run_program():
     details['PostalLat'] = address_map['lat']
     details['PostalLng'] = address_map['lng']
     details['locationLevel0'] = location_area
+
     details['topAdDuration'] = "7"
     details['submitType'] = "saveAndCheckout"
     details['postAdForm.description'] = description

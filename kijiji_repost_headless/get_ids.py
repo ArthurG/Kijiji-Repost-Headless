@@ -1,5 +1,19 @@
+from iterfzf import iterfzf
 import json
 import requests
+
+denormalized_locations = {}
+def denormalize_location(list_of_dicts, prefix, region):
+    for item in list_of_dicts:
+        if 'nameEn' in item.keys() and item['nameEn']:
+            new_prefix =  prefix + " > " + item['nameEn']
+        elif 'regionLabel' in item.keys() and item['regionLabel']:
+            new_prefix =  prefix + " > " + item['regionLabel']
+        if 'children' in item.keys() and item['children']:
+            denormalize_location(item['children'], new_prefix, item['id'])
+        else:
+            print(new_prefix)
+            denormalized_locations[new_prefix] = (item['id'], region,)
 
 
 def find_where(d, area_id=None):
@@ -9,31 +23,14 @@ def find_where(d, area_id=None):
     :return: tuple, containing the location id and area id of the selected_dict region 
     """
     list_of_dicts = sorted(d['children'], key=lambda k: k['nameEn'])
-
-    print()  # empty space
-
-    # print a numbered list (starting with number 1) of all the regions
-    for num, dictionary in enumerate(list_of_dicts, 1):
-        print(num, "-", dictionary['nameEn'])
-
-    # make sure the input is a number and a valid index
-    while True:
-        index = input('\nWhere are you? ')
-        if index.isdigit():
-            if 0 < int(index) <= len(list_of_dicts):
-                selected_dict = list_of_dicts[int(index) - 1]
-                break
-        print("Enter a valid number!")
-
-    # if the selected dictionary has children, we list it again
-    if len(selected_dict['children']) > 0:
-        return find_where(selected_dict, selected_dict['id'])
+    denormalize_location(list_of_dicts, '', None)
+    selected_location = iterfzf(denormalized_locations.keys())
 
     # else we return the location
-    print("Here's your location ID:", selected_dict['id'])
-    print("And your location area:", area_id)
+    print("Here's your location ID:", denormalized_locations[selected_location][0])
+    print("And your location area:", denormalized_locations[selected_location][1])
 
-    return selected_dict['id'], area_id
+    return denormalized_locations[selected_location]
 
 
 def get_location_and_area_ids():
