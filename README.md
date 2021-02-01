@@ -8,6 +8,7 @@
 
 - This project requires python3 with: python-requests, bs4, pyyaml
 - Run `pip3 install -r requirements.txt` to install all dependencies
+- Insure you have fzf and sxiv installed `apt-get install fzf sxiv`
 
 ## Requirements
 

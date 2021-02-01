@@ -3,6 +3,9 @@ from iterfzf import iterfzf
 
 import json
 import os
+import sys
+import subprocess
+import getpass
 from collections import OrderedDict
 from operator import itemgetter
 
@@ -199,7 +202,7 @@ def yesno():
     else:
        sys.stdout.write("Please respond with 'yes' or 'no'")
 
-def run_program():
+def run_program(args):
     print("****************************************************************")
     print("* Creating the item.yaml file. Please answer all the questions. *")
     print("****************************************************************\n")
@@ -210,17 +213,31 @@ def run_program():
     category_map = restart_function(pick_category)
     location_id, location_area = get_location_and_area_ids()  # Returns a tuple containing location ID and area ID
     description = get_description()
-    print("Ad type:")
+    print("Image Dirs:")
     photos = []
 
     # TODO - photos
     # use fzf to find root of image dir
-    # notify user of sxiv default keybindings - use arrow keys and 'm' to mark image for use
-    # then open image dir with sxiv -i -o -t
     # if headless, fall back onto using iterfzf multi select ?
-    photos_len = int(input("Specify how many images are there to upload: "))
-    for i in range(photos_len):
-        photos.append(input("Specify the path of image #{} relative to the .yaml file: ".format(i+1)))
+    image_dirs = args.image_dirs
+    
+    print("use arrow keys and 'm' to mark image for use")
+
+    if not image_dirs:
+        image_dirs = [['/media/%s' % getpass.getuser()], ['/home/%s' % getpass.getuser()]]
+    image_dirs_flat = []
+    [[image_dirs_flat.append(img_dir) for img_dir in sub_dirs] for sub_dirs in image_dirs]
+    
+    quoted_image_dirs_flat = ['"%s"' % img_dir for img_dir in image_dirs_flat]
+    
+    image_filter_command = 'find %s -maxdepth 4 -iname \'*.jpg\' | grep -i \'\.jpg$\' | sxiv -i -o -t' % ' '.join(quoted_image_dirs_flat)
+    print(image_filter_command)
+    result = subprocess.check_output(image_filter_command, shell=True, text=True)
+    # TODO - take care of the case that image dirs don't have images, or that no image was selected
+    
+    for photo_path in result.split('\n'):
+        if photo_path:          # not adding empty strings
+            photos.append(photo_path)
 
     details = OrderedDict()
     for attrKey, attrVal in category_map.items():

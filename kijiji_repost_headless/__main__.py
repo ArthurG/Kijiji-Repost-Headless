@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+
 from time import sleep
 
 import yaml
@@ -43,6 +44,8 @@ def main():
     repost_parser.set_defaults(function=repost_ad)
 
     build_parser = subparsers.add_parser('build_ad', help='generates the item.yml file for a new ad')
+    build_parser.add_argument('-i', '--image-dirs', action='append', dest="image_dirs", nargs='+',
+                              default=None, help='image directories from where to select images')
     build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
@@ -186,7 +189,7 @@ def nuke(args, api=None):
 
 
 def generate_post_file(args):
-    generator.run_program()
+    generator.run_program(args)
 
 
 if __name__ == "__main__":
