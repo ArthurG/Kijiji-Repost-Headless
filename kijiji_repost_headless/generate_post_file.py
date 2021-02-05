@@ -169,26 +169,23 @@ def pick_category():
 
     return ans
     
-
-
 # Multiline ad description
 def get_description():
     contents = []
     print("Enter multiline ad description.")
-    print("Type 'DEL' on a new line to delete last line. Type 'EOF' on a new line to finish.")
-    while True:
-        line = input()
-        if line.upper() == "EOF":
-            break
-        elif line.upper() == "DEL":
-            if contents:
-                print('"{}" was deleted. Enter next line.'.format(contents.pop()))
-            else:
-                print("This is the last line.")
-            continue
-        contents.append(line)
-    return "\\n".join(contents)
+    editor = os.getenv('EDITOR')
+    if not editor:
+        editor = 'vim' # or nano?
+    tmp_file = '/tmp/kijiji-post-description'
+    if os.path.basename(editor) == 'macs':
+        # my emacs client is launched as a background job from a script called macs and this is a way to block till editor exits
+        subprocess.check_call('bash -c "source %s %s; wait"' % (editor, tmp_file,), shell=True)
+    else:
+        # if using nano, vim, or no any blocking process editor you can do this
+        subprocess.check_call('%s %s' % (editor, tmp_file,), shell=True)
 
+    with open(tmp_file, 'r') as tmp_file_fd:
+        return tmp_file_fd.read()
 
 def yesno():
     yes = {'yes','y', 'ye', ''}
