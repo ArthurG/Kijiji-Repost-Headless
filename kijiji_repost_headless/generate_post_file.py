@@ -213,27 +213,22 @@ def run_program(args):
     category_map = restart_function(pick_category)
     location_id, location_area = get_location_and_area_ids()  # Returns a tuple containing location ID and area ID
     description = get_description()
-    print("Image Dirs:")
-    photos = []
 
-    # TODO - photos
-    # use fzf to find root of image dir
-    # if headless, fall back onto using iterfzf multi select ?
-    image_dirs = args.image_dirs
     
-    print("use arrow keys and 'm' to mark image for use")
-
+    photos = []
+    image_dirs = args.image_dirs
     if not image_dirs:
         image_dirs = [['/media/%s' % getpass.getuser()], ['/home/%s' % getpass.getuser()]]
     image_dirs_flat = []
-    [[image_dirs_flat.append(img_dir) for img_dir in sub_dirs] for sub_dirs in image_dirs]
-    
-    quoted_image_dirs_flat = ['"%s"' % img_dir for img_dir in image_dirs_flat]
-    
-    image_filter_command = 'find %s -maxdepth 4 -iname \'*.jpg\' | grep -i \'\.jpg$\' | sxiv -i -o -t' % ' '.join(quoted_image_dirs_flat)
+    [[image_dirs_flat.append('"%s"' % img_dir) for img_dir in sub_dirs] for sub_dirs in image_dirs]
+    print("Image Dirs:")
+    print("use arrow keys and 'm' to mark image for use; q to finish")
+    # TODO - allow other image types/extensions
+    image_filter_command = 'find %s -maxdepth 4 -iname \'*.jpg\' | grep -i \'\.jpg$\' | sxiv -i -o -t' % ' '.join(image_dirs_flat)
     print(image_filter_command)
     result = subprocess.check_output(image_filter_command, shell=True, text=True)
-    # TODO - take care of the case that image dirs don't have images, or that no image was selected
+
+    # TODO take care of the case that image dirs don't have images, or that no image was selected
     
     for photo_path in result.split('\n'):
         if photo_path:          # not adding empty strings
