@@ -261,7 +261,9 @@ def run_program(args):
         address['PostalLat'] = address_map['lat']
         address['PostalLng'] = address_map['lng']
         address['locationLevel0'] = location_area
-        details['addresses'].append({'address': address})
+        subpost_title = input("Subpost title for this address: ")
+        details['addresses'].append({subpost_title: address})
+
         print ("Add another Address (y/n)?")
 
     details['topAdDuration'] = "7"

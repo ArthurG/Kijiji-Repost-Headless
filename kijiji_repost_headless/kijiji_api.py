@@ -76,12 +76,20 @@ def get_xsrf_token(html):
     """
     soup = bs4.BeautifulSoup(html, 'html.parser')
     p = re.compile(r'Zoop\.init\(.*config: ({.+?}).*\);')
+#    1537285126338.356568b2ee1a221db2b8af988efb3cc6ee5c4480fd1f83f4ad462c534db74c92'
+#    xsrfp = re.compile(r'[0-9]{13}\.[0-9a-fA-F]{64}')
+    xsrfp = re.compile(r'[0-9]{13}\.')
+#    xsrfp = re.compile(r'[0-9a-fA-F]{64}')
+    xsrfres = xsrfp.search(str(soup.html).replace("\n", ""))
+    import ipdb; ipdb.set_trace()
     for script in soup.find_all("script", {"src": False}):
         if script:
-            m = p.search(script.string.replace("\n", ""))
+            m = xsrfp.search(script.string.replace("\n", ""))
+            # m = p.search(script.string.replace("\n", ""))
             if m:
-                # Using yaml to load since this is not valid JSON
-                return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
+                import ipdb; ipdb.set_trace()
+            #     # Using yaml to load since this is not valid JSON
+            #     return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
     raise KijijiApiException("XSRF token not found in html text.", html)
 
 
