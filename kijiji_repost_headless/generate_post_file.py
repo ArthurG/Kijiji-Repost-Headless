@@ -177,12 +177,8 @@ def get_description():
     if not editor:
         editor = 'vim' # or nano?
     tmp_file = '/tmp/kijiji-post-description'
-    if os.path.basename(editor) == 'macs':
-        # my emacs client is launched as a background job from a script called macs and this is a way to block till editor exits
-        subprocess.check_call('bash -c "source %s %s; wait"' % (editor, tmp_file,), shell=True)
-    else:
-        # if using nano, vim, or no any blocking process editor you can do this
-        subprocess.check_call('%s %s' % (editor, tmp_file,), shell=True)
+    # using default editor such as nano, vim, emacs, etc.
+    subprocess.check_call('%s %s' % (editor, tmp_file,), shell=True)
 
     with open(tmp_file, 'r') as tmp_file_fd:
         return tmp_file_fd.read()

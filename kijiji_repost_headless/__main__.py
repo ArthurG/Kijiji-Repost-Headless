@@ -92,8 +92,8 @@ def post_ad(args, api=None):
     cnt = 0
     for post in all_posts:
         cnt += 1
-        print ('another post')
         [data, image_files] = post
+        print ('Posting ... %s' % data['postAdForm.title'])
         
         attempts = 1
         while not check_ad(data['postAdForm.title'], api) and attempts < 5:
