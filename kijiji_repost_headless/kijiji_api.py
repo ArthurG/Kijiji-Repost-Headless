@@ -110,7 +110,7 @@ class KijijiApi:
         """
         Return true if logged into Kijiji for the current session
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads.json', headers=request_headers)
+        resp = self.session.get('https://www.kijiji.ca/my/ads', headers=request_headers)
         try:
             resp.json()
             return True
@@ -229,7 +229,7 @@ class KijijiApi:
         """
         Return a list of dicts with properties for every active ad
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads.json', headers=request_headers)
+        resp = self.session.get('https://www.kijiji.ca/my/ads', headers=request_headers)
         resp.raise_for_status()
         ads_json = json.loads(resp.text)
         ads_info = ads_json['ads']
