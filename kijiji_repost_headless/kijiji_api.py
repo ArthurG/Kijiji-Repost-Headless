@@ -1,22 +1,11 @@
 import json
-import re
 import sys
 from time import strftime
-from random import choice
-import bs4
 import requests
 import yaml
 import os
-
-user_agents = [
-    # Random list of top UAs for mac and windows/ chrome & FF
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/74.0",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:61.0) Gecko/20100101 Firefox/74.0"
-]
-session_ua = choice(user_agents)
-request_headers = {"User-Agent": session_ua}
+import xmltodict
+import time
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -40,51 +29,6 @@ class KijijiApiException(Exception):
         else:
             return self.msg
 
-
-def get_token(html, attrib_name):
-    """
-    Return value of first match for element with name attribute
-    """
-    soup = bs4.BeautifulSoup(html, 'html.parser')
-    res = soup.select("[name='{}']".format(attrib_name))
-    if not res:
-        raise KijijiApiException("Element with name attribute '{}' not found in html text.".format(attrib_name), html)
-    return res[0]['value']
-
-
-def get_kj_data(html):
-    """
-    Return dict of Kijiji page data
-    The 'window.__data' JSON object contains many useful key/values
-    """
-    soup = bs4.BeautifulSoup(html, 'html.parser')
-    p = re.compile(r'window\.__data=(.*);')
-    script_list = soup.find_all("script", {"src": False})
-    for script in script_list:
-        if script:
-            m = p.search(script.string)
-            if m:
-                return json.loads(m.group(1))
-    raise KijijiApiException("'__data' JSON object not found in html text.", html)
-
-
-def get_xsrf_token(html):
-    """
-    Return XSRF token
-    This function is only necessary for the 'm-my-ads.html' page, as this particular page
-    does not contain the usual 'ca.kijiji.xsrf.token' hidden HTML form input element, which is easier to scrape
-    """
-    soup = bs4.BeautifulSoup(html, 'html.parser')
-    p = re.compile(r'Zoop\.init\(.*config: ({.+?}).*\);')
-    for script in soup.find_all("script", {"src": False}):
-        if script:
-            m = p.search(script.string.replace("\n", ""))
-            if m:
-                # Using yaml to load since this is not valid JSON
-                return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
-    raise KijijiApiException("XSRF token not found in html text.", html)
-
-
 class KijijiApi:
     """
     All functions require to be logged in to Kijiji first in order to function correctly
@@ -93,15 +37,34 @@ class KijijiApi:
         config = {}
         self.session = requests.Session()
 
-    def login(self, ssid):
+    def login(self, username, password):
         """
         Login to Kijiji for the current session
         """
-        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        ssid_path = os.path.join(parent_dir, ssid)
-        with open(ssid_path) as ssidFile:
-            cookie_dict = {'ssid': ssidFile.read().strip()}
-            requests.utils.add_dict_to_cookiejar(self.session.cookies, cookie_dict)
+
+        url = "https://mingle.kijiji.ca/api/users/login"
+        headers = {
+			"content-type":"application/x-www-form-urlencoded",
+			"accept":"*/*",
+			"x-ecg-ver":"1.67",
+			"x-ecg-ab-test-group":"",
+			"accept-language":"en-CA",
+			"accept-encoding":"gzip",
+			"user-agent":"Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)"
+        }
+
+        payload = {"username": username, "password":password, "socialAutoRegistration": "false"}
+
+        r = self.session.post(url, headers = headers, data = payload)
+
+        # if kijiji response valid attempt to parse response
+        if r.status_code == 200 and r.text != "":
+            parsed = xmltodict.parse(r.text)
+            self.userID = parsed["user:user-logins"]["user:user-login"]["user:id"]
+            self.userToken = parsed["user:user-logins"]["user:user-login"]["user:token"]
+            self.email = username
+        else:
+            raise KijijiApiException("Could not log in.")
 
         if not self.is_logged_in():
             raise KijijiApiException("Could not log in.")
@@ -110,14 +73,24 @@ class KijijiApi:
         """
         Return true if logged into Kijiji for the current session
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads', headers=request_headers)
-        try:
-            resp.json()
-            return True
-        except:
-            return False
+
+        url = 'https://mingle.kijiji.ca/api/locations'
+        userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
+        headers = {
+            'accept':'*/*',
+            'x-ecg-ver':'1.67',
+            'x-ecg-authorization-user': userAuth,
+            'x-ecg-ab-test-group':'',
+            'user-agent':'Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)',
+            'accept-language':'en-CA',
+            'accept-encoding':'gzip'
+        }
+
+        r = self.session.get(url, headers = headers)
+        return r.status_code == 200 and r.text != ''
 
     def logout(self):
+        # Broken
         """
         Logout of Kijiji for the current session
         """
@@ -127,22 +100,27 @@ class KijijiApi:
         """
         Delete ad based on ad ID
         """
-        my_ads_page = self.session.get('https://www.kijiji.ca/m-my-ads.html',  headers=request_headers)
-        token_head = self.session.head('https://www.kijiji.ca/j-token-gen.json',  headers=request_headers)
-        xsrf_token = token_head.headers['X-Ebay-Box-Token']
-        params = {
-            'Action': 'DELETE_ADS',
-            'Mode': 'ACTIVE',
-            'needsRedirect': 'false',
-            'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(ad_id),
-            'ca.kijiji.xsrf.token': xsrf_token,
-            'X-Ebay-Box-Token': xsrf_token,
+        url = 'https://mingle.kijiji.ca/api/users/{}/ads/{}'.format(self.userID, ad_id)
+        userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
+        headers = {
+            "content-type":"application/xml",
+            "x-ecg-ver":"1.67",
+            "x-ecg-ab-test-group":"",
+            "x-ecg-authorization-user": userAuth,
+            "accept-encoding": "gzip",
+            "user-agent":"Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)"
         }
-        resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params,  headers=request_headers)
-        if "OK" not in resp.text:
-            raise KijijiApiException("Could not delete ad.", resp.text)
+
+        r = self.session.delete(url, headers = headers)
+
+        if r.status_code == 204:
+            print('Ad ' + ad_id + ' Successfully Deleted')
+            return True
+        else:
+            raise KijijiApiException("Could not delete ad.")
 
     def delete_ad_using_title(self, title):
+        # Broken
         """
         Delete ad based on ad title
         """
@@ -150,6 +128,7 @@ class KijijiApi:
         [self.delete_ad(ad['id']) for ad in all_ads if ad['title'].strip() == title.strip()]
 
     def upload_image(self, token, image_files=[]):
+        # Broken
         """
         Upload one or more photos to Kijiji
 
@@ -177,77 +156,108 @@ class KijijiApi:
         return [image for image in image_urls if image is not None]
 
     def post_ad_using_data(self, data, image_files=[]):
-        """
-        Post new ad
-
-        'data' is a dictionary of ad data that to be posted
-        'image_files' is a list of binary objects corresponding to images to upload
-        """
-        # Load ad posting page (arbitrary category)
-        resp = self.session.get('https://www.kijiji.ca/p-admarkt-post-ad.html?categoryId=15', headers=request_headers)
-
-        # Get token required for upload
-        m = re.search(r"initialXsrfToken: '(\S+)'", resp.text)
-        if m:
-            image_upload_token = m.group(1)
+        # missing images
+        url = 'https://mingle.kijiji.ca/api/users/{}/ads'.format(self.userID)
+        userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
+        headers={
+            'content-type':'application/xml',
+            'accept':'*/*',
+            'x-ecg-ver':'1.67',
+            'x-ecg-ab-test-group':'',
+            'accept-encoding': 'gzip',
+            'x-ecg-authorization-user': userAuth,
+            'accept-language':'en-CA',
+            'user-agent':'Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)'
+        }
+        r = self.session.post(url, headers=headers, data=data)
+        
+        if r.status_code == 201 and r.text != '':
+            parsed = xmltodict.parse(r.text)
+            return True
         else:
-            raise KijijiApiException("'initialXsrfToken' not found in html text.", resp.text)
+            return False
 
-        # Upload the images
-        image_list = self.upload_image(image_upload_token, image_files)
-        data['images'] = ",".join(image_list)
 
-        # Retrieve XSRF tokens
-        data['ca.kijiji.xsrf.token'] = get_token(resp.text, 'ca.kijiji.xsrf.token')
-        data['postAdForm.fraudToken'] = get_token(resp.text, 'postAdForm.fraudToken')
+    def scrape_ad(self, old_ad_details):
+        details = {
+            '@xmlns:types': 'http://www.ebayclassifiedsgroup.com/schema/types/v1', 
+            '@xmlns:cat': 'http://www.ebayclassifiedsgroup.com/schema/category/v1', 
+            '@xmlns:loc': 'http://www.ebayclassifiedsgroup.com/schema/location/v1', 
+            '@xmlns:ad': 'http://www.ebayclassifiedsgroup.com/schema/ad/v1', 
+            '@xmlns:attr': 'http://www.ebayclassifiedsgroup.com/schema/attribute/v1', 
+            '@xmlns:pic': 'http://www.ebayclassifiedsgroup.com/schema/picture/v1', 
+            '@xmlns:user': 'http://www.ebayclassifiedsgroup.com/schema/user/v1', 
+            '@xmlns:rate': 'http://www.ebayclassifiedsgroup.com/schema/rate/v1', 
+            '@xmlns:reply': 'http://www.ebayclassifiedsgroup.com/schema/reply/v1', 
+            '@locale': 'en-CA'
+        }
 
-        # Select basic package and confirm terms
-        data['postAdForm.confirmedTerms'] = True
-        data['featuresForm.featurePackage'] = "PKG_BASIC"
+        attribute_paths = [
+            ["ad:title"], 
+            ["ad:description"], 
+            ["loc:locations", "loc:location", "@id"], 
+            ["ad:ad-type", "ad:value"], 
+            ["cat:category", "@id"], 
+            ["ad:ad-address", "types:zip-code"], 
+            ["ad:ad-address", "types:full-address"], 
+            ["ad:price", "types:price-type", "types:value"], 
+            ["ad:price", "types:amount"], 
+            ["pic:pictures", "pic:picture"], 
+            ["attr:attributes"]
+        ]
 
-        # Format ad data and check constraints
-        data['postAdForm.description'] = data['postAdForm.description'].replace("\\n", "\n")
-        title_len = len(data.get("postAdForm.title", ""))
-        if not title_len >= 8:
-            raise KijijiApiException("Your ad title is too short! (min 8 chars)")
-        if title_len > 64:
-            raise KijijiApiException("Your ad title is too long! (max 64 chars)")
+        for path in attribute_paths:
+            curr_dict_dest = details
+            curr_dict_src = old_ad_details
+            for k in path[:-1]:
+                if k in curr_dict_src and curr_dict_src != "" and curr_dict_src != None:
+                   curr_dict_src = curr_dict_src[k]
 
-        # Upload the ad itself
-        new_ad_url = "https://www.kijiji.ca/p-submit-ad.html"
-        resp = self.session.post(new_ad_url, data=data, headers=request_headers)
-        resp.raise_for_status()
-        if "deleteSurveyReasons" not in resp.text:
-            if "There was an issue posting your ad, please contact Customer Service." in resp.text:
-                raise KijijiApiException("Could not post ad; this user is banned.", resp.text)
-            else:
-                raise KijijiApiException("Could not post ad.", resp.text)
-
-        # Extract ad ID from response set-cookie
-        ad_id = re.search('kjrva=(\d+)', resp.headers['Set-Cookie']).group(1)
-
-        return ad_id
+                   if k not in curr_dict_dest:
+                       curr_dict_dest[k] = {}
+                   curr_dict_dest = curr_dict_dest[k]
+                else:
+                    curr_dict_dest = {}
+                    break
+            if path[-1] in curr_dict_src:
+                curr_dict_dest[path[-1]] = curr_dict_src[path[-1]]
+        
+        details["ad:email"] = self.email
+        details = {'ad:ad': details }
+        finalPayload = xmltodict.unparse(details, short_empty_elements=True, pretty=True)
+        return finalPayload
 
     def get_all_ads(self):
         """
         Return a list of dicts with properties for every active ad
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads', headers=request_headers)
-        resp.raise_for_status()
-        ads_json = json.loads(resp.text)
-        ads_info = ads_json['ads']
+        url = 'https://mingle.kijiji.ca/api/users/{}/ads/'.format(self.userID)
+        userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
+        headers = {
+            'accept':'*/*',
+            'x-ecg-ver':'1.67',
+            'x-ecg-authorization-user': userAuth,
+            'x-ecg-ab-test-group':'',
+            'user-agent':'Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)',
+            'accept-language':'en-CA',
+            'accept-encoding':'gzip'
+            }
 
-        if ads_info:
-            # Get rank (ie. page number) for each ad
-            # Can't use dict comprehension for building params because every key has the same name,
-            # must use a list of key-value tuples instead
-            params = [("ids", ad['id']) for ad in ads_info.values()]
-            resp = self.session.get('https://www.kijiji.ca/my/ranks', params=params, headers=request_headers)
-            resp.raise_for_status()
-            ranks_json = json.loads(resp.text)
+        r = self.session.get(url, headers = headers)
 
-            # Add ranks to existing ad properties dict
-            for ad_id, rank in ranks_json['ranks'].items():
-                ads_info[ad_id]['rank'] = rank
+        if r.status_code == 200 and r.text != '':
+            parsed = xmltodict.parse(r.text)
+            # no ads case
+            if ("ad:ad" not in parsed["ad:ads"]):
+                return []
 
-        return [ad for ad in ads_info.values()]
+            ads = parsed["ad:ads"]["ad:ad"]
+
+            # Single ad case
+            if "@id" in ads:
+                return [ads]
+            # multi ad case
+            else:
+                return ads
+        else:
+             []
