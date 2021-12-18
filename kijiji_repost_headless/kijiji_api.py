@@ -224,8 +224,8 @@ class KijijiApi:
         
         details["ad:email"] = self.email
         details = {'ad:ad': details }
-        finalPayload = xmltodict.unparse(details, short_empty_elements=True, pretty=True)
-        return finalPayload
+        ad_final = xmltodict.unparse(details, short_empty_elements=True, pretty=True)
+        return ad_final
 
     def get_all_ads(self):
         """

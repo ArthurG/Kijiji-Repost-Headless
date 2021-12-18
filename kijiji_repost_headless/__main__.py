@@ -17,7 +17,7 @@ def main():
     parser.add_argument('-u', '--username', help='username of your kijiji account')
     parser.add_argument('-p', '--password', help='password of your kijiji account')
     subparsers = parser.add_subparsers(help='sub-command help')
-
+    # the following commands are broken, and are commented out 
     """
     post_parser = subparsers.add_parser('post', help='post a new ad')
     post_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
@@ -63,11 +63,9 @@ def repost_all(args, api=None):
         api.login(args.username, args.password)
 
     all_ads_old = api.get_all_ads()
-    print(all_ads_old)
-    # [api.delete_ad(ad['@id']) for ad in all_ads_old]
+    [api.delete_ad(ad['@id']) for ad in all_ads_old]
     sleep(60)
-
-    # [api.post_ad_using_data(api.scrape_ad(ad), []) for ad in all_ads_old]
+    [api.post_ad_using_data(api.scrape_ad(ad), []) for ad in all_ads_old]
 
 def get_post_details(ad_file, api=None):
     """
