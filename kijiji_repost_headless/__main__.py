@@ -1,6 +1,8 @@
 import argparse
 import os
 import sys
+import copy
+
 from time import sleep
 
 import yaml
@@ -43,6 +45,8 @@ def main():
     repost_parser.set_defaults(function=repost_ad)
 
     build_parser = subparsers.add_parser('build_ad', help='generates the item.yml file for a new ad')
+    build_parser.add_argument('-i', '--image-dirs', action='append', dest="image_dirs", nargs='+',
+                              default=None, help='image directories from where to select images')
     build_parser.set_defaults(function=generate_post_file)
 
     args = parser.parse_args()
@@ -65,31 +69,42 @@ def get_post_details(ad_file, api=None):
     del data['image_paths']
 
     data['postAdForm.title'] = data['postAdForm.title'].strip()
-
-    return [data, files]
+    all_data = []
+    for address in data['addresses']:
+        new_data = copy.deepcopy(data)
+        del new_data['addresses']
+        subpost_title = [*address][0]
+        new_data.update(address[subpost_title])
+        new_data['postAdForm.title'] += " %s" % subpost_title
+        all_data.append([new_data, files])
+    return all_data
 
 
 def post_ad(args, api=None):
     """
     Post new ad
     """
-    [data, image_files] = get_post_details(args.ad_file)
     if not api:
         api = kijiji_api.KijijiApi()
         api.login(args.ssid)
 
-    attempts = 1
-    while not check_ad(args, api) and attempts < 5:
-        if attempts > 1:
-            print("Failed ad post attempt #{}, trying again.".format(attempts))
-        attempts += 1
+    all_posts = get_post_details(args.ad_file)
+    cnt = 0
+    for post in all_posts:
+        cnt += 1
+        [data, image_files] = post
+        print ('Posting ... %s' % data['postAdForm.title'])
+        
+        attempts = 1
+        while not check_ad(data['postAdForm.title'], api) and attempts < 5:
+            if attempts > 1:
+                print("Failed ad post attempt #{}, trying again.".format(attempts))
+            attempts += 1
 
-        if not api:
-            api = kijiji_api.KijijiApi()
-            api.login(args.ssid)
-        api.post_ad_using_data(data, image_files)
-    if not check_ad(args, api):
-        print("Failed ad post attempt #{}, giving up.".format(attempts))
+            #data['postAdForm.title'] = data['postAdForm.title']# + " %d" % cnt
+            api.post_ad_using_data(data, image_files)
+        if not check_ad(data['postAdForm.title'], api):
+            print("Failed ad post attempt #{}, giving up.".format(attempts))
 
 
 def show_ads(args, api=None):
@@ -114,22 +129,18 @@ def delete_ad(args, api=None):
     """
     Delete ad
     """
-    [data, _] = get_post_details(args.ad_file)
+    all_posts = get_post_details(args.ad_file)
+    for post in all_posts:
+        [data, _] = post
+        if not api:
+            api = kijiji_api.KijijiApi()
+            api.login(args.ssid)
 
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
-
-    if args.ad_file:
-        del_ad_name = ""
-        for item in data:
-            if item == "postAdForm.title":
-                del_ad_name = data[item]
-        try:
-            api.delete_ad_using_title(del_ad_name)
+        if args.ad_file:
+            ad_name = data["postAdForm.title"]
+            print(ad_name)
+            api.delete_ad_using_title(ad_name)
             print("Deletion successful or unaffected")
-        except kijiji_api.KijijiApiException:
-            print("Did not find an existing ad with matching title, skipping ad deletion")
 
 def repost_ad(args, api=None):
     """
@@ -154,24 +165,13 @@ def repost_ad(args, api=None):
     post_ad(args, api)
 
 
-def check_ad(args, api=None):
+def check_ad(title, api=None):
     """
     Check if ad is live
     """
-    [data, _] = get_post_details(args.ad_file)
-
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
-
-    ad_title = ""
-
-    for key, val in data.items():
-        if key == "postAdForm.title":
-            ad_title = val
 
     all_ads = api.get_all_ads()
-    return [ad['title'] for ad in all_ads if ad['title'] == ad_title]
+    return [ad['title'] for ad in all_ads if ad['title'] == title]
 
 
 def nuke(args, api=None):
@@ -186,7 +186,7 @@ def nuke(args, api=None):
 
 
 def generate_post_file(args):
-    generator.run_program()
+    generator.run_program(args)
 
 
 if __name__ == "__main__":

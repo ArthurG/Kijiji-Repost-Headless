@@ -67,24 +67,6 @@ def get_kj_data(html):
                 return json.loads(m.group(1))
     raise KijijiApiException("'__data' JSON object not found in html text.", html)
 
-
-def get_xsrf_token(html):
-    """
-    Return XSRF token
-    This function is only necessary for the 'm-my-ads.html' page, as this particular page
-    does not contain the usual 'ca.kijiji.xsrf.token' hidden HTML form input element, which is easier to scrape
-    """
-    soup = bs4.BeautifulSoup(html, 'html.parser')
-    p = re.compile(r'Zoop\.init\(.*config: ({.+?}).*\);')
-    for script in soup.find_all("script", {"src": False}):
-        if script:
-            m = p.search(script.string.replace("\n", ""))
-            if m:
-                # Using yaml to load since this is not valid JSON
-                return yaml.load(m.group(1), Loader=yaml.FullLoader)['token']
-    raise KijijiApiException("XSRF token not found in html text.", html)
-
-
 class KijijiApi:
     """
     All functions require to be logged in to Kijiji first in order to function correctly

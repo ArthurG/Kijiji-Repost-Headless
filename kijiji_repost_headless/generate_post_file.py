@@ -1,7 +1,11 @@
 # TODO: Actual error handling
+from iterfzf import iterfzf
 
 import json
 import os
+import sys
+import subprocess
+import getpass
 from collections import OrderedDict
 from operator import itemgetter
 
@@ -134,33 +138,15 @@ def pick_category():
     filename = os.path.join(os.path.dirname(__file__), 'kijiji_categories_attrs.json')
     kijiji_categories_and_attributes = json.load(open(filename, 'r'))
 
-    while True:
-        keyword = input("Please provide a category keyword to search for: ")
-        possible_categories = [cat for cat in kijiji_categories_and_attributes if keyword.lower() in cat['category_name'].lower()]
-        if len(possible_categories) < 1:
-            print("Could not find any categories using the given keyword. Try again.")
-        else:
-            break
-
-    for i, cat in enumerate(sorted(possible_categories, key=itemgetter('category_name'))):
-        print("{:>2d} - {}".format(i + 1, cat['category_name']))
-
-    # Make sure the input is a number and a valid index
-    while True:
-        response = input("Select a category from the list above (choose number) [To restart, enter 0]: ")
-        if response == "0":
-            print()  # Empty line
-            return None  # Restart
-        if response.isdigit():
-            if 0 < int(response) <= len(possible_categories):
-                selected_category = sorted(possible_categories, key=itemgetter('category_name'))[int(response) - 1]
-                break
-        print("Enter a valid number!")
+    categories_hash = {cat['category_name']:cat['category_id'] for cat in kijiji_categories_and_attributes}
+    selected_category = iterfzf(categories_hash.keys())
+    cat_id = categories_hash[selected_category]
+    cat_dict = [cat_dict for cat_dict in kijiji_categories_and_attributes if cat_dict['category_id'] == cat_id][0]
 
     ans = {}
-    ans['category'] = selected_category['category_id']
+    ans['category'] = cat_id
 
-    for attribute in selected_category['attributes']:
+    for attribute in cat_dict['attributes']:
         if attribute['attribute_type'] == "input":
             ans[attribute['attribute_name']] = input("Enter a value related to \"{}\": ".format(attribute['attribute_human_readable']))
         else:
@@ -182,60 +168,92 @@ def pick_category():
                 print("Enter a valid number!")
 
     return ans
-
-
+    
 # Multiline ad description
 def get_description():
     contents = []
     print("Enter multiline ad description.")
-    print("Type 'DEL' on a new line to delete last line. Type 'EOF' on a new line to finish.")
-    while True:
-        line = input()
-        if line.upper() == "EOF":
-            break
-        elif line.upper() == "DEL":
-            if contents:
-                print('"{}" was deleted. Enter next line.'.format(contents.pop()))
-            else:
-                print("This is the last line.")
-            continue
-        contents.append(line)
-    return "\\n".join(contents)
+    editor = os.getenv('EDITOR')
+    if not editor:
+        editor = 'vim' # or nano?
+    tmp_file = '/tmp/kijiji-post-description'
+    # using default editor such as nano, vim, emacs, etc.
+    subprocess.check_call('%s %s' % (editor, tmp_file,), shell=True)
 
+    with open(tmp_file, 'r') as tmp_file_fd:
+        return tmp_file_fd.read()
 
-def run_program():
+def yesno():
+    yes = {'yes','y', 'ye', ''}
+    no = {'no','n'}
+    
+    choice = input().lower()
+    if choice in yes:
+       return True
+    elif choice in no:
+       return False
+    else:
+       sys.stdout.write("Please respond with 'yes' or 'no'")
+
+def run_program(args):
     print("****************************************************************")
     print("* Creating the item.yaml file. Please answer all the questions. *")
     print("****************************************************************\n")
 
     print("Your ad must be submitted in a specific category.")
-
+    
+    address_maps =[]
     category_map = restart_function(pick_category)
-    address_map = restart_function(get_address_map)
     location_id, location_area = get_location_and_area_ids()  # Returns a tuple containing location ID and area ID
     description = get_description()
-    print("Ad type:")
+
+    
     photos = []
-    photos_len = int(input("Specify how many images are there to upload: "))
-    for i in range(photos_len):
-        photos.append(input("Specify the path of image #{} relative to the .yaml file: ".format(i+1)))
+    image_dirs = args.image_dirs
+    if not image_dirs:
+        image_dirs = [['/media/%s' % getpass.getuser()], ['/home/%s' % getpass.getuser()]]
+    image_dirs_flat = []
+    [[image_dirs_flat.append('"%s"' % img_dir) for img_dir in sub_dirs] for sub_dirs in image_dirs]
+    print("Image Dirs:")
+    print("use arrow keys and 'm' to mark image for use; q to finish")
+    # TODO - allow other image types/extensions
+    image_filter_command = 'find %s -maxdepth 4 -iname \'*.jpg\' | grep -i \'\.jpg$\' | sxiv -i -o -t' % ' '.join(image_dirs_flat)
+    print(image_filter_command)
+    result = subprocess.check_output(image_filter_command, shell=True, text=True)
+
+    # TODO take care of the case that image dirs don't have images, or that no image was selected
+    
+    for photo_path in result.split('\n'):
+        if photo_path:          # not adding empty strings
+            photos.append(photo_path)
 
     details = OrderedDict()
     for attrKey, attrVal in category_map.items():
         if attrKey != 'category':
             details[attrKey] = attrVal
-    details['postAdForm.city'] = address_map['city']
-    details['postAdForm.province'] = address_map['province']
-    details['postAdForm.postalCode'] = address_map['postal_code']
-    details['postAdForm.addressCity'] = address_map['city']
-    details['postAdForm.addressProvince'] = address_map['province']
-    details['postAdForm.addressPostalCode'] = address_map['postal_code']
-    details['postAdForm.geocodeLat'] = address_map['lat']
-    details['postAdForm.geocodeLng'] = address_map['lng']
-    details['postAdForm.locationId'] = location_id
-    details['PostalLat'] = address_map['lat']
-    details['PostalLng'] = address_map['lng']
-    details['locationLevel0'] = location_area
+
+    details['addresses'] = []
+    print ("Add Address (y/n)?")
+    while yesno():              # add more addresses?
+        address_map = restart_function(get_address_map)
+        address = {}
+        address['postAdForm.city'] = address_map['city']
+        address['postAdForm.province'] = address_map['province']
+        address['postAdForm.postalCode'] = address_map['postal_code']
+        address['postAdForm.addressCity'] = address_map['city']
+        address['postAdForm.addressProvince'] = address_map['province']
+        address['postAdForm.addressPostalCode'] = address_map['postal_code']
+        address['postAdForm.geocodeLat'] = address_map['lat']
+        address['postAdForm.geocodeLng'] = address_map['lng']
+        address['postAdForm.locationId'] = location_id
+        address['PostalLat'] = address_map['lat']
+        address['PostalLng'] = address_map['lng']
+        address['locationLevel0'] = location_area
+        subpost_title = input("Subpost title for this address: ")
+        details['addresses'].append({subpost_title: address})
+
+        print ("Add another Address (y/n)?")
+
     details['topAdDuration'] = "7"
     details['submitType'] = "saveAndCheckout"
     details['postAdForm.description'] = description
