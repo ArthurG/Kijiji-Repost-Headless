@@ -14,10 +14,11 @@ if sys.version_info < (3, 0):
 
 def main():
     parser = argparse.ArgumentParser(description="Post ads on Kijiji")
-    parser.add_argument('-s', '--ssid', default="ssid.txt", help='cookie of your kijiji account')
-
+    parser.add_argument('-u', '--username', help='username of your kijiji account')
+    parser.add_argument('-p', '--password', help='password of your kijiji account')
     subparsers = parser.add_subparsers(help='sub-command help')
-
+    # the following commands are broken, and are commented out 
+    """
     post_parser = subparsers.add_parser('post', help='post a new ad')
     post_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
     post_parser.set_defaults(function=post_ad)
@@ -44,6 +45,10 @@ def main():
 
     build_parser = subparsers.add_parser('build_ad', help='generates the item.yml file for a new ad')
     build_parser.set_defaults(function=generate_post_file)
+    """
+
+    repost_all_parser = subparsers.add_parser('repost_all', help='repost all listed ads')
+    repost_all_parser.set_defaults(function=repost_all)
 
     args = parser.parse_args()
     try:
@@ -51,6 +56,16 @@ def main():
     except argparse.ArgumentError:
         parser.print_help()
 
+
+def repost_all(args, api=None):
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
+
+    all_ads_old = api.get_all_ads()
+    [api.delete_ad(ad['@id']) for ad in all_ads_old]
+    sleep(60)
+    [api.post_ad_using_data(api.scrape_ad(ad), []) for ad in all_ads_old]
 
 def get_post_details(ad_file, api=None):
     """
@@ -76,7 +91,7 @@ def post_ad(args, api=None):
     [data, image_files] = get_post_details(args.ad_file)
     if not api:
         api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
+        api.login(args.username, args.password)
 
     attempts = 1
     while not check_ad(args, api) and attempts < 5:
@@ -86,7 +101,7 @@ def post_ad(args, api=None):
 
         if not api:
             api = kijiji_api.KijijiApi()
-            api.login(args.ssid)
+            api.login(args.username, args.password)
         api.post_ad_using_data(data, image_files)
     if not check_ad(args, api):
         print("Failed ad post attempt #{}, giving up.".format(attempts))
@@ -98,7 +113,7 @@ def show_ads(args, api=None):
     """
     if not api:
         api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
+        api.login(args.username, args.password)
     all_ads = sorted(api.get_all_ads(), key=lambda k: k[args.sort_key], reverse=args.sort_reverse)
 
     print("    id    ", "page", "views", "          title")
@@ -118,7 +133,7 @@ def delete_ad(args, api=None):
 
     if not api:
         api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
+        api.login(args.username, args.password)
 
     if args.ad_file:
         del_ad_name = ""
@@ -162,7 +177,7 @@ def check_ad(args, api=None):
 
     if not api:
         api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
+        api.login(args.username, args.password)
 
     ad_title = ""
 
@@ -180,7 +195,7 @@ def nuke(args, api=None):
     """
     if not api:
         api = kijiji_api.KijijiApi()
-        api.login(args.ssid)
+        api.login(args.username, args.password)
     all_ads = api.get_all_ads()
     [api.delete_ad(ad['id']) for ad in all_ads]
 
