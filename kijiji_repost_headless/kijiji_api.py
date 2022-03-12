@@ -219,13 +219,61 @@ class KijijiApi:
                 else:
                     curr_dict_dest = {}
                     break
-            if path[-1] in curr_dict_src:
+            if curr_dict_src is not None and path[-1] in curr_dict_src:
                 curr_dict_dest[path[-1]] = curr_dict_src[path[-1]]
         
         details["ad:email"] = self.email
         details = {'ad:ad': details }
         ad_final = xmltodict.unparse(details, short_empty_elements=True, pretty=True)
-        return ad_final
+        return ad_final.encode("utf-8")
+
+    def getAttributes(self, attributeID):
+        url = 'https://mingle.kijiji.ca/api/ads/metadata/{}'.format(attributeID)
+        userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
+        headers = {
+            'accept':'*/*',
+            'x-ecg-ver':'1.67',
+            'x-ecg-authorization-user': userAuth,
+            'x-ecg-ab-test-group':'',
+            'user-agent':'Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)',
+            'accept-language':'en-CA',
+            'accept-encoding':'gzip'
+            }
+
+        r = self.session.get(url, headers = headers)
+
+        if r.status_code == 200 and r.text != '':
+            print(r.text)
+            parsed = xmltodict.parse(r.text)
+            return parsed
+        else:
+            parsed = xmltodict.parse(r.text)
+            print(parsed)
+    
+    def get_categories(self):
+        url = 'https://mingle.kijiji.ca/api/categories'
+        userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
+        headers = {
+            'accept':'*/*',
+            'x-ecg-ver':'1.67',
+            'x-ecg-authorization-user': userAuth,
+            'x-ecg-ab-test-group':'',
+            'user-agent':'Kijiji 12.15.0 (iPhone; iOS 13.5.1; en_CA)',
+            'accept-language':'en-CA',
+            'accept-encoding':'gzip'
+            }
+
+        r = self.session.get(url, headers = headers)
+        
+        if r.status_code == 200 and r.text != '':
+            parsed = xmltodict.parse(r.text)
+            print(parsed)
+            return parsed
+        else:
+            parsed = xmltodict.parse(r.text)
+            print(parsed)
+
+        pass
 
     def get_all_ads(self):
         """
