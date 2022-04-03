@@ -9,7 +9,7 @@ import requests
 from random import choice
 import yaml
 
-from get_ids import get_location_and_area_ids
+from kijiji_repost_headless.get_ids import get_location_and_area_ids
 
 user_agents = [
     # Random list of top UAs for mac and windows/ chrome & FF

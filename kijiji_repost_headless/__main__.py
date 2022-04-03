@@ -5,8 +5,8 @@ from time import sleep
 
 import yaml
 
-import generate_post_file as generator
-import kijiji_api
+from kijiji_repost_headless import generate_post_file as generator
+from kijiji_repost_headless import kijiji_api
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -51,6 +51,7 @@ def main():
     repost_all_parser.set_defaults(function=repost_all)
 
     args = parser.parse_args()
+    print(args.username)
     try:
         args.function(args)
     except argparse.ArgumentError:
