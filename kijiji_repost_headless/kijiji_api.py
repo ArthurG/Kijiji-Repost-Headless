@@ -1,3 +1,32 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@AaronMill93 
+zalmoxis
+/
+Kijiji-Repost-Headless
+Public
+forked from ArthurG/Kijiji-Repost-Headless
+Code
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+Kijiji-Repost-Headless/kijiji_repost_headless/kijiji_api.py /
+@zalmoxis
+zalmoxis fixed xsrf issue with delete
+Latest commit 0024992 on Feb 4, 2021
+ History
+ 12 contributors
+@jackm@ArthurG@GuoArthur@StefGou@socialcode-rob1@jordanmehravar@kheniparth@justinwrightit@getsec@zalmoxis@shameelabd@erikdvlp
+253 lines (218 sloc)  9.7 KB
+   
 import json
 import re
 import sys
@@ -9,7 +38,7 @@ import yaml
 import os
 
 user_agents = [
-    # Random list of top UAs for mac and windows/ chrome & FF 
+    # Random list of top UAs for mac and windows/ chrome & FF
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
     "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/74.0",
@@ -110,7 +139,7 @@ class KijijiApi:
         """
         Return true if logged into Kijiji for the current session
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads', headers=request_headers)
+        resp = self.session.get('https://www.kijiji.ca/my/ads.json', headers=request_headers)
         try:
             resp.json()
             return True
@@ -128,12 +157,15 @@ class KijijiApi:
         Delete ad based on ad ID
         """
         my_ads_page = self.session.get('https://www.kijiji.ca/m-my-ads.html',  headers=request_headers)
+        token_head = self.session.head('https://www.kijiji.ca/j-token-gen.json',  headers=request_headers)
+        xsrf_token = token_head.headers['X-Ebay-Box-Token']
         params = {
             'Action': 'DELETE_ADS',
             'Mode': 'ACTIVE',
             'needsRedirect': 'false',
             'ads': '[{{"adId":"{}","reason":"PREFER_NOT_TO_SAY","otherReason":""}}]'.format(ad_id),
-            'ca.kijiji.xsrf.token': get_xsrf_token(my_ads_page.text),
+            'ca.kijiji.xsrf.token': xsrf_token,
+            'X-Ebay-Box-Token': xsrf_token,
         }
         resp = self.session.post('https://www.kijiji.ca/j-delete-ad.json', data=params,  headers=request_headers)
         if "OK" not in resp.text:
@@ -149,7 +181,6 @@ class KijijiApi:
     def upload_image(self, token, image_files=[]):
         """
         Upload one or more photos to Kijiji
-
         'image_files' is a list of binary objects corresponding to images
         """
         image_urls = []
@@ -176,7 +207,6 @@ class KijijiApi:
     def post_ad_using_data(self, data, image_files=[]):
         """
         Post new ad
-
         'data' is a dictionary of ad data that to be posted
         'image_files' is a list of binary objects corresponding to images to upload
         """
@@ -229,7 +259,7 @@ class KijijiApi:
         """
         Return a list of dicts with properties for every active ad
         """
-        resp = self.session.get('https://www.kijiji.ca/my/ads', headers=request_headers)
+        resp = self.session.get('https://www.kijiji.ca/my/ads.json', headers=request_headers)
         resp.raise_for_status()
         ads_json = json.loads(resp.text)
         ads_info = ads_json['ads']
@@ -248,3 +278,16 @@ class KijijiApi:
                 ads_info[ad_id]['rank'] = rank
 
         return [ad for ad in ads_info.values()]
+© 2022 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
+Loading complete
