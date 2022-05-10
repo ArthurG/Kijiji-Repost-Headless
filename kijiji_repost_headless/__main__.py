@@ -79,10 +79,15 @@ def back_up(args, api=None, all_ads_old=None):
     if not os.path.isdir('.ads'):
         os.mkdir('.ads')
 
+    user_root = args.username.split('@')[0]
+
+    if not os.path.isdir(os.path.join('.ads', user_root)):
+        os.mkdir(os.path.join('.ads', user_root))
+
     for ad in all_ads_old:
         try:
             ad_bytes = api.scrape_ad(ad)
-            with open(os.path.join('.ads', ad['ad:title']), 'wb') as f:
+            with open(os.path.join('.ads', user_root, ad['ad:title']), 'wb') as f:
                 f.write(ad_bytes)
         except Exception as e:
             warnings.warn("Could not backup ad: {}".format(ad['ad:title']))
@@ -96,14 +101,19 @@ def repost_from_backup(args, api=None):
     if not os.path.isdir('.ads'):
         raise FileNotFoundError("ads directory not found")
 
-    ad_files = os.listdir('.ads')
+    user_root = args.username.split('@')[0]
+
+    if not os.path.isdir(os.path.join('.ads', user_root)):
+        raise FileNotFoundError("ads USER directory not found")
+
+    ad_files = os.listdir(os.path.join('.ads', user_root))
 
     if not ad_files:
         raise FileNotFoundError("No ads found in ads dir")
 
     for ad in ad_files:
         try:
-            with open(os.path.join('.ads', ad), 'rb') as f:
+            with open(os.path.join('.ads', user_root, ad), 'rb') as f:
                 ad_bytes = f.read()
                 api.post_ad_using_data(ad_bytes)
         except Exception as e:
