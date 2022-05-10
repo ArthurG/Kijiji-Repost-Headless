@@ -4,3 +4,4 @@ __pycache__/
 .env
 build/*
 dist/*
+*/.ads/*
