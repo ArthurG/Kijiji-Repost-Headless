@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import warnings
 from time import sleep
 
 import yaml
@@ -58,15 +59,63 @@ def main():
         parser.print_help()
 
 
+def back_up(args, api=None, all_ads_old=None):
+    """
+    Save all ads locally
+    """
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
+
+    if all_ads_old is None:
+        all_ads_old = api.get_all_ads()
+
+    if not os.path.isdir('.ads'):
+        os.mkdir('.ads')
+
+    for ad in all_ads_old:
+        try:
+            ad_bytes = api.scrape_ad(ad)
+            with open(os.path.join('.ads', ad['ad:title']), 'wb') as f:
+                f.write(ad_bytes)
+        except Exception as e:
+            warnings.warn("Could not backup ad: {}".format(ad['ad:title']))
+
+
+def repost_from_backup(args, api=None):
+    if not api:
+        api = kijiji_api.KijijiApi()
+        api.login(args.username, args.password)
+
+    if not os.path.isdir('.ads'):
+        raise FileNotFoundError("ads directory not found")
+
+    ad_files = os.listdir('.ads')
+
+    if not ad_files:
+        raise FileNotFoundError("No ads found in ads dir")
+
+    for ad in ad_files:
+        try:
+            with open(os.path.join('.ads', ad), 'rb') as f:
+                ad_bytes = f.read()
+                api.post_ad_using_data(ad_bytes)
+        except Exception as e:
+            warnings.warn("Could not repost ad: {} from backup".format(ad))
+
+
 def repost_all(args, api=None):
     if not api:
         api = kijiji_api.KijijiApi()
         api.login(args.username, args.password)
 
     all_ads_old = api.get_all_ads()
+    # backup:
+    back_up(args, api, all_ads_old)
     [api.delete_ad(ad['@id']) for ad in all_ads_old]
     sleep(60)
     [api.post_ad_using_data(api.scrape_ad(ad), []) for ad in all_ads_old]
+
 
 def get_post_details(ad_file, api=None):
     """
