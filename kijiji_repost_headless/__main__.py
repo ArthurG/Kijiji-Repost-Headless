@@ -51,6 +51,12 @@ def main():
     repost_all_parser = subparsers.add_parser('repost_all', help='repost all listed ads')
     repost_all_parser.set_defaults(function=repost_all)
 
+    backup_parser = subparsers.add_parser('backup', help='back up ads to local directory')
+    backup_parser.set_defaults(function=back_up)
+
+    repost_backup_parser = subparsers.add_parser('repost_from_backup', help='repost from backup dir')
+    repost_backup_parser.set_defaults(function=repost_from_backup)
+
     args = parser.parse_args()
     print(args.username)
     try:
