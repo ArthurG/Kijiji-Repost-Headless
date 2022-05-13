@@ -131,7 +131,7 @@ def repost_all(args, api=None):
     # backup:
     back_up(args, api, all_ads_old)
     [api.delete_ad(ad['@id']) for ad in all_ads_old]
-    sleep(60)
+    sleep(120)
     [api.post_ad_using_data(api.scrape_ad(ad), []) for ad in all_ads_old]
 
 
