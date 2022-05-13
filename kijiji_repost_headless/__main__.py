@@ -1,3 +1,4 @@
+import re
 import argparse
 import os
 import sys
@@ -87,7 +88,8 @@ def back_up(args, api=None, all_ads_old=None):
     for ad in all_ads_old:
         try:
             ad_bytes = api.scrape_ad(ad)
-            with open(os.path.join('.ads', user_root, ad['ad:title']), 'wb') as f:
+            write_name = re.sub(r'([\/:?!@#$%<>`\\* ])', '-', ad['ad:title'])
+            with open(os.path.join('.ads', user_root, write_name), 'wb') as f:
                 f.write(ad_bytes)
         except Exception as e:
             warnings.warn("Could not backup ad: {}".format(ad['ad:title']))
