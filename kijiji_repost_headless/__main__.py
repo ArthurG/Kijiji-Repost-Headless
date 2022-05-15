@@ -3,12 +3,14 @@ import argparse
 import os
 import sys
 import warnings
+import logging
 from time import sleep
-
 import yaml
-
 from kijiji_repost_headless import generate_post_file as generator
 from kijiji_repost_headless import kijiji_api
+
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info < (3, 0):
     raise Exception("This program requires Python 3.0 or greater")
@@ -118,6 +120,7 @@ def repost_from_backup(args, api=None):
             with open(os.path.join('.ads', user_root, ad), 'rb') as f:
                 ad_bytes = f.read()
                 api.post_ad_using_data(ad_bytes)
+                sleep(30)
         except Exception as e:
             warnings.warn("Could not repost ad: {} from backup".format(ad))
 
@@ -130,9 +133,18 @@ def repost_all(args, api=None):
     all_ads_old = api.get_all_ads()
     # backup:
     back_up(args, api, all_ads_old)
-    [api.delete_ad(ad['@id']) for ad in all_ads_old]
-    sleep(120)
-    [api.post_ad_using_data(api.scrape_ad(ad), []) for ad in all_ads_old]
+    # Delete and Repost in sequence with sleep to avoid being blocked on
+    # rapid fire reposting / api calls
+    for ad in all_ads_old:
+        try:
+            api.delete_ad(ad['@id'])
+            logger.info("Deleted ad: {}".format(ad['@id']))
+            sleep(20)
+            api.post_ad_using_data(api.scrape_ad(ad), [])
+            sleep(20)
+            logger.info("Reposted ad: {}".format(ad['@id']))
+        except Exception as e:
+            logger.error("Could not repost ad: {}".format(ad['@id']), exc_info=True)
 
 
 def get_post_details(ad_file, api=None):
