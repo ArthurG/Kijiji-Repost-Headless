@@ -1,3 +1,4 @@
 bs4
 requests
 pyyaml==5.4
+xmltodict

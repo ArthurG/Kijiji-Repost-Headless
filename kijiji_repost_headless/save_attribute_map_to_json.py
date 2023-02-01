@@ -1,6 +1,6 @@
 import bs4, requests, json
-from kijiji_api import get_token
-from kijiji_settings import KIJIJI_USERNAME, KIJIJI_PASSWORD
+from kijiji_repost_headless.kijiji_api import get_token
+from kijiji_repost_headless.kijiji_settings import KIJIJI_USERNAME, KIJIJI_PASSWORD
 
 session = requests.session()
 
