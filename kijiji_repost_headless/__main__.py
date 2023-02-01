@@ -1,15 +1,18 @@
+import json
 import re
 import argparse
 import os
 import sys
-import warnings
 import logging
+import time
 from time import sleep
-import yaml
-from kijiji_repost_headless import generate_post_file as generator
+from bs4 import BeautifulSoup
+import datetime
+import random
+from pathlib import Path
 from kijiji_repost_headless import kijiji_api
 
-
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 if sys.version_info < (3, 0):
@@ -17,271 +20,150 @@ if sys.version_info < (3, 0):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Post ads on Kijiji")
-    parser.add_argument('-u', '--username', help='username of your kijiji account')
-    parser.add_argument('-p', '--password', help='password of your kijiji account')
-    subparsers = parser.add_subparsers(help='sub-command help')
-    # the following commands are broken, and are commented out 
-    """
-    post_parser = subparsers.add_parser('post', help='post a new ad')
-    post_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
-    post_parser.set_defaults(function=post_ad)
-
-    show_parser = subparsers.add_parser('show', help='show currently listed ads')
-    show_parser.set_defaults(function=show_ads)
-    show_parser.add_argument('-k', '--key', dest='sort_key', default='title', choices=['id', 'title', 'rank', 'views'], help="sort ad list by key")
-    show_parser.add_argument('-r', '--reverse', action='store_true', dest='sort_reverse', help='reverse sort order')
-
-    delete_parser = subparsers.add_parser('delete', help='delete a listed ad')
-    delete_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
-    delete_parser.set_defaults(function=delete_ad)
-
-    nuke_parser = subparsers.add_parser('nuke', help='delete all ads')
-    nuke_parser.set_defaults(function=nuke)
-
-    check_parser = subparsers.add_parser('check_ad', help='check if ad is active')
-    check_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
-    check_parser.set_defaults(function=check_ad)
-
-    repost_parser = subparsers.add_parser('repost', help='repost an existing ad')
-    repost_parser.add_argument('ad_file', type=str, help='.yml file containing ad details')
-    repost_parser.set_defaults(function=repost_ad)
-
-    build_parser = subparsers.add_parser('build_ad', help='generates the item.yml file for a new ad')
-    build_parser.set_defaults(function=generate_post_file)
-    """
-
-    repost_all_parser = subparsers.add_parser('repost_all', help='repost all listed ads')
-    repost_all_parser.set_defaults(function=repost_all)
-
-    backup_parser = subparsers.add_parser('backup', help='back up ads to local directory')
-    backup_parser.set_defaults(function=back_up)
-
-    repost_backup_parser = subparsers.add_parser('repost_from_backup', help='repost from backup dir')
-    repost_backup_parser.set_defaults(function=repost_from_backup)
+    parser = argparse.ArgumentParser(description="Repost ads on Kijiji by backing up all active ads, deleting, "
+                                                 "and reposting from backup. Requires input directory with a"
+                                                 " `.accounts.json` file that has list of emails and passwords "
+                                                 "for the accounts to repost."
+                                                 ""
+                                                 "File should have structure: "
+                                                 "{ 'accounts': { ['username': 'ipsum', 'pass': 'gipsum']}}")
+    parser.add_argument('-d', '--dir', help='backup directory for kijiji ads', default='$HOME/kijiji')
 
     args = parser.parse_args()
-    print(args.username)
+    # print(args.username)
     try:
-        args.function(args)
+        full_repost(args)
     except argparse.ArgumentError:
         parser.print_help()
 
 
-def back_up(args, api=None, all_ads_old=None):
-    """
-    Save all ads locally
-    """
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
+def process_account(account: dict, work_dir: str):
+    # get username:
+    user_account = account.get('username', None)
+    if not user_account:
+        raise ValueError("Usename missing for account")
+    user = user_account.split('@')[0]
+    passwd = account.get('pass', None)
+    if not passwd:
+        raise ValueError(f"Password missing for account {user}")
+    date = datetime.datetime.now().astimezone().strftime('%Y-%m-%d_%H-%M-%S')
+    # parse backup directory
+    backup_dir = os.path.join(work_dir, user)
+    if not os.path.isdir(backup_dir):
+        # try to create the dir
+        Path(backup_dir).mkdir(parents=True, exist_ok=True)
+        prev_backups = []
+    else:
+        # get all previous backups:
+        dir_items = os.listdir(backup_dir)
+        date_matches = [re.match(r'(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})', k) for k in dir_items]
+        prev_backups = []
+        for k in date_matches:
+            if k:
+                prev_backups.append(os.path.join(backup_dir, k[0]))
+        # sorts from oldest [0] to newest [-1]
+        prev_backups.sort()
 
-    if all_ads_old is None:
-        all_ads_old = api.get_all_ads()
+    def load_backup_ads(backup_dir: str) -> dict:
+        loaded_ads = {}
+        files_in_backup_dir = os.listdir(backup_dir)
+        backed_up_files = [k for k in files_in_backup_dir if k.endswith('.xml')]
 
-    if not os.path.isdir('.ads'):
-        os.mkdir('.ads')
-
-    user_root = args.username.split('@')[0]
-
-    if not os.path.isdir(os.path.join('.ads', user_root)):
-        os.mkdir(os.path.join('.ads', user_root))
-
-    for ad in all_ads_old:
-        try:
-            ad_bytes = api.scrape_ad(ad)
-            write_name = re.sub(r'([\/:?!@#$%<>`\\* ])', '-', ad['ad:title'])
-            with open(os.path.join('.ads', user_root, write_name), 'wb') as f:
-                f.write(ad_bytes)
-        except Exception as e:
-            warnings.warn("Could not backup ad: {}".format(ad['ad:title']))
-
-
-def repost_from_backup(args, api=None):
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
-
-    if not os.path.isdir('.ads'):
-        raise FileNotFoundError("ads directory not found")
-
-    user_root = args.username.split('@')[0]
-
-    if not os.path.isdir(os.path.join('.ads', user_root)):
-        raise FileNotFoundError("ads USER directory not found")
-
-    ad_files = os.listdir(os.path.join('.ads', user_root))
-
-    if not ad_files:
-        raise FileNotFoundError("No ads found in ads dir")
-
-    for ad in ad_files:
-        try:
-            with open(os.path.join('.ads', user_root, ad), 'rb') as f:
+        for ad in backed_up_files:
+            ad_path = os.path.join(backup_dir, ad)
+            with open(ad_path, 'rb') as f:
                 ad_bytes = f.read()
-                api.post_ad_using_data(ad_bytes)
-                sleep(30)
-        except Exception as e:
-            warnings.warn("Could not repost ad: {} from backup".format(ad))
+                soup = BeautifulSoup(str(ad_bytes), 'html.parser')
+                ad_title = soup.find('ad:title').text
+                ad_title = ad_title.replace("\\", "")  # removes any odd characters
+                loaded_ads[ad_title] = (ad_path, ad_bytes)
 
+        return loaded_ads
 
-def repost_all(args, api=None):
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
+    if prev_backups:
+        last_backup_ads = load_backup_ads(prev_backups[-1])
 
-    all_ads_old = api.get_all_ads()
-    # backup:
-    back_up(args, api, all_ads_old)
-    # Delete and Repost in sequence with sleep to avoid being blocked on
-    # rapid fire reposting / api calls
-    for ad in all_ads_old:
-        try:
+    # log in
+    api = kijiji_api.KijijiApi()
+    api.login(user_account, passwd)
+    time.sleep(0.5)
+    if not api.is_logged_in():
+        raise ValueError("Could not log in")
+    # first, get all ads currently up:
+    active_ads = api.get_all_ads()
+
+    # TODO: check for change between active ads and last_backup_ads
+    # are there NEW Ads? are some not there?
+
+    # create new backup dir:
+    backup_subdir = os.path.join(backup_dir, date)
+    if not os.path.isdir(backup_subdir):
+        Path(backup_subdir).mkdir(parents=True, exist_ok=True)
+    else:
+        raise ValueError("this backup already exits...")
+
+    # back up all ads
+    for ad in active_ads:
+        ad_bytes = api.scrape_ad(ad)
+        pre_filter_name = re.sub(r'([\/:?!^@#&$%,"”~<>\-`;_=(){}\[\]\\* ])', '_', ad['ad:title'])
+        write_name = re.sub(r'(\_+)', '_', pre_filter_name)
+        with open(os.path.join(backup_subdir, write_name + ".xml"), 'wb') as f:
+            f.write(ad_bytes)
+
+    # validate all ads were backed up:
+    ads_in_backup = [str(k) for k in Path(backup_subdir).rglob('*.xml')]
+    if len(ads_in_backup) != len(active_ads):
+        raise ValueError("Not all ads backed up")
+
+    # validate that all ads were deleted:
+    attempts = 0
+    while len(active_ads) > 0:
+        # now delete all adds with some random jitter so Kijiji API isn't hit too hard...
+        for ad in active_ads:
             api.delete_ad(ad['@id'])
-            logger.info("Deleted ad: {}".format(ad['@id']))
-            sleep(20)
-            api.post_ad_using_data(api.scrape_ad(ad), [])
-            sleep(20)
-            logger.info("Reposted ad: {}".format(ad['@id']))
-        except Exception as e:
-            logger.error("Could not repost ad: {}".format(ad['@id']), exc_info=True)
-
-
-def get_post_details(ad_file, api=None):
-    """
-    Extract ad data from inf file
-    """
-    with open(ad_file, 'r') as f:
-        data = yaml.load(f, Loader=yaml.FullLoader)
-
-    files = [open(os.path.join(os.path.dirname(ad_file), picture), 'rb').read() for picture in data['image_paths']]
-
-    # Remove image_paths key; it does not need to be sent in the HTTP post request later on
-    del data['image_paths']
-
-    data['postAdForm.title'] = data['postAdForm.title'].strip()
-
-    return [data, files]
-
-
-def post_ad(args, api=None):
-    """
-    Post new ad
-    """
-    [data, image_files] = get_post_details(args.ad_file)
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
-
-    attempts = 1
-    while not check_ad(args, api) and attempts < 5:
-        if attempts > 1:
-            print("Failed ad post attempt #{}, trying again.".format(attempts))
+            sleep(5 + 5 * random.random())
         attempts += 1
-
-        if not api:
-            api = kijiji_api.KijijiApi()
-            api.login(args.username, args.password)
-        api.post_ad_using_data(data, image_files)
-    if not check_ad(args, api):
-        print("Failed ad post attempt #{}, giving up.".format(attempts))
-
-
-def show_ads(args, api=None):
-    """
-    Print list of all ads
-    """
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
-    all_ads = sorted(api.get_all_ads(), key=lambda k: k[args.sort_key], reverse=args.sort_reverse)
-
-    print("    id    ", "page", "views", "          title")
-    [print("{ad_id:10} {rank:4} {views:5} '{title}'".format(
-        ad_id=ad['id'],
-        rank=ad['rank'],
-        views=ad['views'],
-        title=ad['title']
-    )) for ad in all_ads]
+        active_ads = api.get_all_ads()
+        if active_ads:
+            print("Not all ads deleted, trying again!")
+        else:
+            print(f"All ads deleted in {attempts} attempts, waiting for 30s")
+            # sleep to let kijiji update its db
+            time.sleep(60)
+        if attempts > 10:
+            raise ValueError("Attempted to delete all ads 10 times, but no luck.")
 
 
-def delete_ad(args, api=None):
-    """
-    Delete ad
-    """
-    [data, _] = get_post_details(args.ad_file)
+    # now repost from backup
+    files_in_backup_dir = os.listdir(backup_subdir)
+    backed_up_files = [k for k in files_in_backup_dir if k.endswith('.xml')]
 
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
+    for ad in backed_up_files:
+        ad_path = os.path.join(backup_subdir, ad)
+        with open(ad_path, 'rb') as f:
+            ad_bytes = f.read()
+            soup = BeautifulSoup(str(ad_bytes), 'html.parser')
+            ad_title = soup.find('ad:title').text
+            ad_title = ad_title.replace("\\", "")  # removes any odd characters
+            logger.info("Posting ad: {}".format(ad_title))
+            api.post_ad_using_data(ad_bytes)
+            sleep(5 + 5 * random.random())
 
-    if args.ad_file:
-        del_ad_name = ""
-        for item in data:
-            if item == "postAdForm.title":
-                del_ad_name = data[item]
-        try:
-            api.delete_ad_using_title(del_ad_name)
-            print("Deletion successful or unaffected")
-        except kijiji_api.KijijiApiException:
-            print("Did not find an existing ad with matching title, skipping ad deletion")
-
-def repost_ad(args, api=None):
-    """
-    Repost ad
-
-    Try to delete ad with same title if possible before reposting new ad
-    """
-    delete_ad(args, api)
-
-    # Must wait a bit before posting the same ad even after deleting it, otherwise Kijiji will automatically remove it
-    print("Waiting 3 minutes before posting again. Please do not exit this script.")
-    sleep(60)
-    print("Still waiting; 2 more minutes...")
-    sleep(60)
-    print("Still waiting; 1 minute left...")
-    sleep(30)
-    print("Still waiting; 30 seconds...")
-    sleep(20)
-    print("Still waiting; just 10 seconds...")
-    sleep(10)
-    print("Posting Ad now")
-    post_ad(args, api)
+    sleep(5)
+    active_ads = api.get_all_ads()
+    if len(active_ads) != len(backed_up_files):
+        raise ValueError("didn't repost all :/")
 
 
-def check_ad(args, api=None):
-    """
-    Check if ad is live
-    """
-    [data, _] = get_post_details(args.ad_file)
-
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
-
-    ad_title = ""
-
-    for key, val in data.items():
-        if key == "postAdForm.title":
-            ad_title = val
-
-    all_ads = api.get_all_ads()
-    return [ad['title'] for ad in all_ads if ad['title'] == ad_title]
-
-
-def nuke(args, api=None):
-    """
-    Delete all active ads
-    """
-    if not api:
-        api = kijiji_api.KijijiApi()
-        api.login(args.username, args.password)
-    all_ads = api.get_all_ads()
-    [api.delete_ad(ad['id']) for ad in all_ads]
-
-
-def generate_post_file(args):
-    generator.run_program()
+def full_repost(args):
+    # get accounts info from .accounts.json file in the root directory:
+    if not os.path.isfile(os.path.join(args.dir, '.accounts.json')):
+        raise FileNotFoundError(f"Could not find .accounts.json file in {args.dir}")
+    with open(os.path.join(args.dir, '.accounts.json'), 'r') as f:
+        accounts_raw = json.load(f)
+    accounts = accounts_raw.get('accounts', None)
+    for account in accounts[-1:]:
+        process_account(account=account, work_dir=args.dir)
 
 
 if __name__ == "__main__":

@@ -275,11 +275,46 @@ class KijijiApi:
 
         pass
 
+
+    def _get_paginated_ads(self, url: str, headers: dict) -> list:
+
+        ads = []
+        r = self.session.get(url, headers=headers)
+
+        if r.status_code == 200 and r.text != '':
+            parsed = xmltodict.parse(r.text)
+            # no ads case
+            if ("ad:ad" not in parsed["ad:ads"]):
+                return []
+
+            ads_from_request = parsed["ad:ads"]["ad:ad"]
+
+            # Single ad case
+            if "@id" in ads:
+                ads = [ads_from_request]
+            # multi ad case
+            else:
+                ads = ads_from_request
+
+            # find out if there is next token:
+            links = parsed['ad:ads']['types:paging']['types:link']
+            if '@href' in links:
+                return ads
+            else:
+                # there are more ads
+                for link in links:
+                    if link['@rel'] == 'next':
+                        nextPage = link['@href']
+                        time.sleep(0.5)
+                        ads += self._get_paginated_ads(url=nextPage, headers=headers)
+
+        return ads
+
     def get_all_ads(self):
         """
         Return a list of dicts with properties for every active ad
         """
-        url = 'https://mingle.kijiji.ca/api/users/{}/ads/'.format(self.userID)
+        url = 'https://mingle.kijiji.ca/api/users/{}/ads?page=0&size=100'.format(self.userID)
         userAuth = 'id="{}", token="{}"'.format(self.userID, self.userToken)
         headers = {
             'accept':'*/*',
@@ -290,22 +325,6 @@ class KijijiApi:
             'accept-language':'en-CA',
             'accept-encoding':'gzip'
             }
+        # use paginator to capture ads on multiple pages:
+        return self._get_paginated_ads(url=url, headers=headers)
 
-        r = self.session.get(url, headers = headers)
-
-        if r.status_code == 200 and r.text != '':
-            parsed = xmltodict.parse(r.text)
-            # no ads case
-            if ("ad:ad" not in parsed["ad:ads"]):
-                return []
-
-            ads = parsed["ad:ads"]["ad:ad"]
-
-            # Single ad case
-            if "@id" in ads:
-                return [ads]
-            # multi ad case
-            else:
-                return ads
-        else:
-             []
